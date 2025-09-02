@@ -130,7 +130,7 @@ export function DashboardView({ data, onQuickAction }: DashboardViewProps) {
           Welcome to your dashboard! 👋
         </h2>
         <p className="text-muted-foreground">
-          Here's your daily overview for {formatDate(today)}. You're doing great!
+          Here&apos;s your daily overview for {formatDate(today)}. You&apos;re doing great!
         </p>
       </div>
 

@@ -7,7 +7,7 @@ import { User } from '@/types'
 
 export function AuthDebug() {
   const [user, setUser] = useState<User | null>(null)
-  const [sessionInfo, setSessionInfo] = useState<any>(null)
+  const [sessionInfo, setSessionInfo] = useState<object | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
