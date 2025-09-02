@@ -727,6 +727,403 @@ export type Database = {
           created_at?: string
         }
       }
+      income_sources: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          type: string
+          amount: number
+          frequency: string
+          next_pay_date: string | null
+          is_active: boolean
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          type: string
+          amount: number
+          frequency: string
+          next_pay_date?: string | null
+          is_active?: boolean
+          description?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          type?: string
+          amount?: number
+          frequency?: string
+          next_pay_date?: string | null
+          is_active?: boolean
+          description?: string | null
+          created_at?: string
+        }
+      }
+      income_records: {
+        Row: {
+          id: string
+          user_id: string
+          source_id: string
+          amount: number
+          date: string
+          description: string | null
+          is_recurring: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          source_id: string
+          amount: number
+          date: string
+          description?: string | null
+          is_recurring?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          source_id?: string
+          amount?: number
+          date?: string
+          description?: string | null
+          is_recurring?: boolean
+          created_at?: string
+        }
+      }
+      bad_habits: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          description: string | null
+          unit: string
+          target_reduction: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          description?: string | null
+          unit: string
+          target_reduction: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          description?: string | null
+          unit?: string
+          target_reduction?: number
+          created_at?: string
+        }
+      }
+      bad_habit_records: {
+        Row: {
+          id: string
+          habit_id: string
+          date: string
+          count: number
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          habit_id: string
+          date: string
+          count: number
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          habit_id?: string
+          date?: string
+          count?: number
+          notes?: string | null
+          created_at?: string
+        }
+      }
+      visualizations: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          image_url: string | null
+          category: string
+          target_date: string | null
+          is_achieved: boolean
+          progress: number
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          image_url?: string | null
+          category: string
+          target_date?: string | null
+          is_achieved?: boolean
+          progress?: number
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          image_url?: string | null
+          category?: string
+          target_date?: string | null
+          is_achieved?: boolean
+          progress?: number
+          notes?: string | null
+          created_at?: string
+        }
+      }
+      gifts: {
+        Row: {
+          id: string
+          user_id: string
+          recipient_name: string
+          relationship: string
+          occasion: string
+          gift_idea: string
+          budget: number | null
+          spent: number | null
+          purchase_date: string | null
+          event_date: string
+          status: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          recipient_name: string
+          relationship: string
+          occasion: string
+          gift_idea: string
+          budget?: number | null
+          spent?: number | null
+          purchase_date?: string | null
+          event_date: string
+          status?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          recipient_name?: string
+          relationship?: string
+          occasion?: string
+          gift_idea?: string
+          budget?: number | null
+          spent?: number | null
+          purchase_date?: string | null
+          event_date?: string
+          status?: string
+          notes?: string | null
+          created_at?: string
+        }
+      }
+      events: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          event_type: string
+          date: string
+          budget: number | null
+          spent: number | null
+          attendees: string[]
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          event_type: string
+          date: string
+          budget?: number | null
+          spent?: number | null
+          attendees?: string[]
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          event_type?: string
+          date?: string
+          budget?: number | null
+          spent?: number | null
+          attendees?: string[]
+          status?: string
+          created_at?: string
+        }
+      }
+      freelance_projects: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          client: string
+          description: string | null
+          status: string
+          hourly_rate: number
+          estimated_hours: number
+          actual_hours: number
+          deadline: string | null
+          budget: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          client: string
+          description?: string | null
+          status?: string
+          hourly_rate: number
+          estimated_hours: number
+          actual_hours?: number
+          deadline?: string | null
+          budget?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          client?: string
+          description?: string | null
+          status?: string
+          hourly_rate?: number
+          estimated_hours?: number
+          actual_hours?: number
+          deadline?: string | null
+          budget?: number | null
+          created_at?: string
+        }
+      }
+      project_tasks: {
+        Row: {
+          id: string
+          project_id: string
+          title: string
+          description: string | null
+          status: string
+          priority: string
+          estimated_hours: number | null
+          actual_hours: number | null
+          deadline: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          title: string
+          description?: string | null
+          status?: string
+          priority?: string
+          estimated_hours?: number | null
+          actual_hours?: number | null
+          deadline?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          title?: string
+          description?: string | null
+          status?: string
+          priority?: string
+          estimated_hours?: number | null
+          actual_hours?: number | null
+          deadline?: string | null
+          created_at?: string
+        }
+      }
+      time_entries: {
+        Row: {
+          id: string
+          user_id: string
+          project_id: string
+          date: string
+          hours: number
+          description: string | null
+          billable: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          project_id: string
+          date: string
+          hours: number
+          description?: string | null
+          billable?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          project_id?: string
+          date?: string
+          hours?: number
+          description?: string | null
+          billable?: boolean
+          created_at?: string
+        }
+      }
+      project_documents: {
+        Row: {
+          id: string
+          project_id: string
+          name: string
+          type: string
+          size: number
+          url: string
+          uploaded_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          name: string
+          type: string
+          size: number
+          url: string
+          uploaded_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          name?: string
+          type?: string
+          size?: number
+          url?: string
+          uploaded_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
