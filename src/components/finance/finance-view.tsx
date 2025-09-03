@@ -70,7 +70,7 @@ export function FinanceView({ data, onDataUpdate, onAddTransaction, onAddSavings
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="budget">Budget</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
@@ -81,7 +81,7 @@ export function FinanceView({ data, onDataUpdate, onAddTransaction, onAddSavings
         <TabsContent value="overview" className="mt-6">
           <div className="space-y-6">
             {/* Financial Summary Cards */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
               <Card className="bg-green-50 border-green-200">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-2">

@@ -69,7 +69,7 @@ export function ProductivityView({ data, onDataUpdate, onAddGoal, onGoalEdit, on
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3 h-auto">
           <TabsTrigger value="goals">Goals</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="habits">Habits</TabsTrigger>

@@ -60,7 +60,7 @@ export function QuickActions({ onAction }: QuickActionsProps) {
         <CardTitle>Quick Actions</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {actions.map((action) => {
             const Icon = action.icon
             return (
@@ -75,7 +75,7 @@ export function QuickActions({ onAction }: QuickActionsProps) {
                 </div>
                 <div className="text-center">
                   <div className="font-medium text-sm">{action.label}</div>
-                  <div className="text-xs text-muted-foreground">{action.description}</div>
+                  <div className="text-xs text-muted-foreground hidden sm:block">{action.description}</div>
                 </div>
               </Button>
             )

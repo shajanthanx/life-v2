@@ -147,7 +147,7 @@ export function DashboardView({ data, onQuickAction }: DashboardViewProps) {
       />
 
       {/* Quick Actions & Recent Activity */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <QuickActions onAction={onQuickAction} />
         <RecentActivity activities={recentActivity} />
       </div>

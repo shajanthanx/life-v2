@@ -85,7 +85,7 @@ export function HealthView({ data, onDataUpdate, onAddHealth }: HealthViewProps)
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="sleep">Sleep</TabsTrigger>
           <TabsTrigger value="exercise">Exercise</TabsTrigger>
@@ -129,7 +129,7 @@ export function HealthView({ data, onDataUpdate, onAddHealth }: HealthViewProps)
             </Card>
 
             {/* Health Metrics Grid */}
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {healthMetrics.map((metric, index) => {
                 const Icon = metric.icon
                 return (

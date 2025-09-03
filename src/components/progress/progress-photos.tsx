@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { ProgressPhoto } from '@/types'
 import { formatDate } from '@/lib/utils'
 import { Camera, Calendar, TrendingUp, Plus } from 'lucide-react'
+import { uploadProgressPhoto } from '@/lib/image-utils'
+import { useToast } from '@/components/ui/use-toast'
 
 interface ProgressPhotosProps {
   photos: ProgressPhoto[]
@@ -25,6 +27,9 @@ export function ProgressPhotos({ photos, onAddPhoto, onUpdatePhoto }: ProgressPh
     muscleMass: '',
     notes: ''
   })
+  
+  const [uploading, setUploading] = useState(false)
+  const { addToast } = useToast()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,14 +59,34 @@ export function ProgressPhotos({ photos, onAddPhoto, onUpdatePhoto }: ProgressPh
     })
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setFormData(prev => ({ ...prev, image: reader.result as string }))
+      setUploading(true)
+      try {
+        const result = await uploadProgressPhoto(file)
+        if (result.error) {
+          addToast({
+            type: 'error',
+            title: 'Upload Error',
+            message: result.error
+          })
+        } else if (result.url) {
+          setFormData(prev => ({ ...prev, image: result.url! }))
+          addToast({
+            type: 'success',
+            message: 'Photo uploaded successfully!'
+          })
+        }
+      } catch (error) {
+        addToast({
+          type: 'error',
+          title: 'Upload Error',
+          message: 'Failed to upload photo'
+        })
+      } finally {
+        setUploading(false)
       }
-      reader.readAsDataURL(file)
     }
   }
 

@@ -156,7 +156,7 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
       </div>
 
       {/* Habits Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {filteredHabits.map((habit) => {
           const streak = getHabitStreak(habit)
           const completionRate = getCompletionRate(habit)
@@ -204,7 +204,7 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2 sm:gap-4">
                   <div className="text-center p-3 bg-muted rounded-lg">
                     <div className="flex items-center justify-center space-x-1 text-orange-600 mb-1">
                       <Flame className="h-4 w-4" />
@@ -238,10 +238,11 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
                             key={percentage}
                             size="sm"
                             variant={isSelected ? "default" : "outline"}
-                            className="flex-1 text-xs"
+                            className="flex-1 text-xs px-1"
                             onClick={() => logHabitToday(habit, value)}
                           >
-                            {value} {habit.unit}
+                            <span className="hidden sm:inline">{value} {habit.unit}</span>
+                            <span className="sm:hidden">{value}</span>
                           </Button>
                         )
                       })}

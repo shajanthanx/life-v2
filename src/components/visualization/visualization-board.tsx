@@ -85,7 +85,7 @@ export function VisualizationBoard({ visualizations, onAddVisualization, onUpdat
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -140,7 +140,7 @@ export function VisualizationBoard({ visualizations, onAddVisualization, onUpdat
       </div>
 
       {/* Filters */}
-      <div className="flex space-x-2">
+      <div className="flex flex-wrap gap-2">
         {['all', 'personal', 'career', 'health', 'finance', 'relationships'].map((category) => (
           <Button
             key={category}
@@ -154,7 +154,7 @@ export function VisualizationBoard({ visualizations, onAddVisualization, onUpdat
       </div>
 
       {/* Visualization Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {filteredVisualizations.map((visualization) => {
           const timeRemaining = getTimeRemaining(visualization.targetDate)
           
@@ -184,11 +184,11 @@ export function VisualizationBoard({ visualizations, onAddVisualization, onUpdat
               <CardContent className="space-y-4">
                 {/* Image placeholder */}
                 {visualization.imageUrl ? (
-                  <div className="w-full h-32 bg-cover bg-center rounded-lg" 
+                  <div className="w-full h-24 sm:h-32 bg-cover bg-center rounded-lg" 
                        style={{ backgroundImage: `url(${visualization.imageUrl})` }} />
                 ) : (
-                  <div className="w-full h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
-                    <div className="text-4xl">{getCategoryIcon(visualization.category)}</div>
+                  <div className="w-full h-24 sm:h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
+                    <div className="text-2xl sm:text-4xl">{getCategoryIcon(visualization.category)}</div>
                   </div>
                 )}
 
@@ -228,7 +228,7 @@ export function VisualizationBoard({ visualizations, onAddVisualization, onUpdat
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm"
                     onClick={() => {
                       const newProgress = Math.min(visualization.progress + 10, 100)
                       const updated = {
@@ -240,16 +240,19 @@ export function VisualizationBoard({ visualizations, onAddVisualization, onUpdat
                     }}
                     disabled={visualization.isAchieved}
                   >
-                    Update Progress
+                    <span className="hidden sm:inline">Update Progress</span>
+                    <span className="sm:hidden">Update</span>
                   </Button>
                   
                   {visualization.progress === 100 && !visualization.isAchieved && (
                     <Button
                       size="sm"
+                      className="text-xs sm:text-sm"
                       onClick={() => onUpdateVisualization({ ...visualization, isAchieved: true })}
                     >
                       <Trophy className="h-4 w-4 mr-1" />
-                      Mark Achieved
+                      <span className="hidden sm:inline">Mark Achieved</span>
+                      <span className="sm:hidden">Done</span>
                     </Button>
                   )}
                 </div>

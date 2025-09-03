@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Visualization } from '@/types'
+import { uploadVisualizationImage } from '@/lib/image-utils'
+import { useToast } from '@/components/ui/use-toast'
 
 interface AddVisualizationModalProps {
   isOpen: boolean
@@ -21,6 +23,9 @@ export function AddVisualizationModal({ isOpen, onClose, onSubmit }: AddVisualiz
     notes: '',
     image: ''
   })
+  
+  const [uploading, setUploading] = useState(false)
+  const { addToast } = useToast()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -126,18 +131,44 @@ export function AddVisualizationModal({ isOpen, onClose, onSubmit }: AddVisualiz
               type="file"
               accept="image/*"
               className="w-full p-2 border rounded-md text-sm"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0]
                 if (file) {
-                  const reader = new FileReader()
-                  reader.onload = () => {
-                    setFormData(prev => ({ ...prev, image: reader.result as string }))
+                  setUploading(true)
+                  try {
+                    const result = await uploadVisualizationImage(file)
+                    if (result.error) {
+                      addToast({
+                        type: 'error',
+                        title: 'Upload Error',
+                        message: result.error
+                      })
+                    } else if (result.url) {
+                      setFormData(prev => ({ ...prev, image: result.url! }))
+                      addToast({
+                        type: 'success',
+                        message: 'Image uploaded successfully!'
+                      })
+                    }
+                  } catch (error) {
+                    addToast({
+                      type: 'error',
+                      title: 'Upload Error',
+                      message: 'Failed to upload image'
+                    })
+                  } finally {
+                    setUploading(false)
                   }
-                  reader.readAsDataURL(file)
                 }
               }}
+              disabled={uploading}
             />
-            {formData.image && (
+            {uploading && (
+              <div className="mt-2 text-sm text-blue-600">
+                Uploading image...
+              </div>
+            )}
+            {formData.image && !uploading && (
               <div className="mt-2">
                 <img 
                   src={formData.image} 

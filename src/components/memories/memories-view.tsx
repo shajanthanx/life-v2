@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Memory } from '@/types'
 import { formatDate } from '@/lib/utils'
 import { Heart, Camera, MapPin, Plus, Calendar, Tag } from 'lucide-react'
+import { uploadMemoryImage } from '@/lib/image-utils'
+import { useToast } from '@/components/ui/use-toast'
 
 interface MemoriesViewProps {
   memories: Memory[]
@@ -29,6 +31,8 @@ export function MemoriesView({ memories, onAddMemory, onUpdateMemory }: Memories
   })
 
   const [newTag, setNewTag] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const { addToast } = useToast()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,18 +64,45 @@ export function MemoriesView({ memories, onAddMemory, onUpdateMemory }: Memories
     })
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = () => {
+    if (files.length === 0) return
+
+    setUploading(true)
+    try {
+      const uploadPromises = files.map(file => uploadMemoryImage(file))
+      const results = await Promise.all(uploadPromises)
+      
+      const successfulUploads = results.filter(result => result.url && !result.error)
+      const errors = results.filter(result => result.error)
+      
+      if (successfulUploads.length > 0) {
         setFormData(prev => ({ 
           ...prev, 
-          images: [...prev.images, reader.result as string]
+          images: [...prev.images, ...successfulUploads.map(result => result.url!)]
         }))
+        addToast({
+          type: 'success',
+          message: `${successfulUploads.length} image(s) uploaded successfully!`
+        })
       }
-      reader.readAsDataURL(file)
-    })
+      
+      if (errors.length > 0) {
+        addToast({
+          type: 'error',
+          title: 'Upload Error',
+          message: `Failed to upload ${errors.length} image(s)`
+        })
+      }
+    } catch (error) {
+      addToast({
+        type: 'error',
+        title: 'Upload Error',
+        message: 'Failed to upload images'
+      })
+    } finally {
+      setUploading(false)
+    }
   }
 
   const removeImage = (index: number) => {

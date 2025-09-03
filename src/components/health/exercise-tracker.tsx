@@ -49,7 +49,7 @@ export function ExerciseTracker({ exerciseRecords, onAddRecord }: ExerciseTracke
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -136,45 +136,47 @@ export function ExerciseTracker({ exerciseRecords, onAddRecord }: ExerciseTracke
         <CardContent>
           <div className="space-y-4">
             {recentRecords.map((record) => (
-              <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="text-2xl">{getTypeIcon(record.type)}</div>
-                  
-                  <div>
-                    <h4 className="font-medium">{record.type}</h4>
-                    <p className="text-sm text-muted-foreground">{formatDate(record.date)}</p>
-                    {record.notes && (
-                      <p className="text-xs text-muted-foreground mt-1">{record.notes}</p>
+              <div key={record.id} className="p-4 border rounded-lg">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="text-2xl">{getTypeIcon(record.type)}</div>
+                    
+                    <div className="flex-1">
+                      <h4 className="font-medium">{record.type}</h4>
+                      <p className="text-sm text-muted-foreground">{formatDate(record.date)}</p>
+                      {record.notes && (
+                        <p className="text-xs text-muted-foreground mt-1">{record.notes}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Duration</p>
+                      <p className="font-medium">{record.duration} min</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-muted-foreground">Intensity</p>
+                      <Badge className={getIntensityColor(record.intensity)}>
+                        {record.intensity}
+                      </Badge>
+                    </div>
+                    
+                    {record.calories && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Calories</p>
+                        <p className="font-medium">{record.calories}</p>
+                      </div>
                     )}
                   </div>
-                </div>
-
-                <div className="flex items-center space-x-6 text-right">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Duration</p>
-                    <p className="font-medium">{record.duration} min</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-muted-foreground">Intensity</p>
-                    <Badge className={getIntensityColor(record.intensity)}>
-                      {record.intensity}
-                    </Badge>
-                  </div>
-                  
-                  {record.calories && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Calories</p>
-                      <p className="font-medium">{record.calories}</p>
-                    </div>
-                  )}
                   
                   {record.image && (
-                    <div className="ml-4">
+                    <div className="flex justify-center">
                       <img 
                         src={record.image} 
                         alt="Workout photo" 
-                        className="w-20 h-20 object-cover rounded-lg border"
+                        className="w-32 h-32 object-cover rounded-lg border"
                       />
                     </div>
                   )}
@@ -203,7 +205,7 @@ export function ExerciseTracker({ exerciseRecords, onAddRecord }: ExerciseTracke
             <CardTitle>Exercise Types This Week</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
               {Array.from(new Set(recentRecords.map(r => r.type))).map(type => {
                 const typeRecords = recentRecords.filter(r => r.type === type)
                 const totalMinutes = typeRecords.reduce((acc, r) => acc + r.duration, 0)

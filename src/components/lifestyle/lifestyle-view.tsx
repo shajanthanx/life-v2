@@ -10,7 +10,6 @@ import { AppState, JournalEntry, Book, Movie } from '@/types'
 import { formatDate } from '@/lib/utils'
 import { BookOpen, Film, PenTool, Plus, Calendar, Star, Edit2, Trash2 } from 'lucide-react'
 import { GratitudeLog } from '../gratitude/gratitude-log'
-import { BadHabitsTracker } from '../habits/bad-habits-tracker'
 
 interface LifestyleViewProps {
   data: AppState
@@ -20,10 +19,9 @@ interface LifestyleViewProps {
   onJournalDelete?: (entryId: string) => void
   onAddBook?: () => void
   onAddMovie?: () => void
-  onAddBadHabit?: () => void
 }
 
-export function LifestyleView({ data, onDataUpdate, onAddJournalEntry, onJournalEdit, onJournalDelete, onAddBook, onAddMovie, onAddBadHabit }: LifestyleViewProps) {
+export function LifestyleView({ data, onDataUpdate, onAddJournalEntry, onJournalEdit, onJournalDelete, onAddBook, onAddMovie }: LifestyleViewProps) {
   const [activeTab, setActiveTab] = useState('journal')
 
   const handleAddJournalEntry = () => {
@@ -70,10 +68,9 @@ export function LifestyleView({ data, onDataUpdate, onAddJournalEntry, onJournal
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
           <TabsTrigger value="journal">Journal</TabsTrigger>
           <TabsTrigger value="gratitude">Gratitude</TabsTrigger>
-          <TabsTrigger value="badhabits">Bad Habits</TabsTrigger>
           <TabsTrigger value="books">Books</TabsTrigger>
           <TabsTrigger value="movies">Movies</TabsTrigger>
         </TabsList>
@@ -110,7 +107,7 @@ export function LifestyleView({ data, onDataUpdate, onAddJournalEntry, onJournal
                               <img
                                 src={entry.image}
                                 alt="Journal entry"
-                                className="w-full max-w-sm h-48 object-cover rounded-lg border"
+                                className="w-full max-w-xs sm:max-w-sm h-32 sm:h-48 object-cover rounded-lg border"
                               />
                             </div>
                           )}
@@ -143,16 +140,17 @@ export function LifestyleView({ data, onDataUpdate, onAddJournalEntry, onJournal
                         <Button 
                           size="sm" 
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 text-xs sm:text-sm"
                           onClick={() => onJournalEdit?.(entry)}
                         >
                           <Edit2 className="h-3 w-3 mr-1" />
-                          Edit
+                          <span className="hidden sm:inline">Edit</span>
                         </Button>
                         
                         <Button 
                           size="sm" 
                           variant="outline"
+                          className="px-2"
                           onClick={() => {
                             if (confirm('Are you sure you want to delete this journal entry?')) {
                               onJournalDelete?.(entry.id)
@@ -198,17 +196,6 @@ export function LifestyleView({ data, onDataUpdate, onAddJournalEntry, onJournal
           />
         </TabsContent>
         
-        <TabsContent value="badhabits" className="mt-6">
-          <BadHabitsTracker
-            badHabits={data.badHabits}
-            appData={data}
-            onAddBadHabit={() => onAddBadHabit?.()}
-            onUpdateBadHabit={(habit) => {
-              const updated = data.badHabits.map(h => h.id === habit.id ? habit : h)
-              onDataUpdate({ ...data, badHabits: updated })
-            }}
-          />
-        </TabsContent>
         
         <TabsContent value="books" className="mt-6">
           <Card>

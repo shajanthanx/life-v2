@@ -40,7 +40,7 @@ export function OverviewCards({
   const budgetUsageRate = getProgressPercentage(budgetUsed, totalBudget)
   
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {/* Tasks Progress */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -112,7 +112,7 @@ export function OverviewCards({
       </Card>
 
       {/* Habit Streaks */}
-      <Card className="md:col-span-2">
+      <Card className="sm:col-span-2 lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Flame className="h-5 w-5 text-orange-500" />
@@ -120,7 +120,7 @@ export function OverviewCards({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {habitStreaks.slice(0, 3).map((habit, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div>
@@ -142,7 +142,7 @@ export function OverviewCards({
       </Card>
 
       {/* Savings Progress */}
-      <Card className="md:col-span-2">
+      <Card className="sm:col-span-2 lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <TrendingUp className="h-5 w-5 text-green-500" />

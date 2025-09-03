@@ -31,8 +31,16 @@ import { AddGoalModal } from './modals/add-goal-modal'
 import { EditGoalModal } from './modals/edit-goal-modal'
 import { createGoal, updateGoal, deleteGoal } from '@/lib/api/goals'
 import { createTask, updateTask, deleteTask } from '@/lib/api/tasks'
-import { updateHabit, deleteHabit } from '@/lib/api/habits'
-import { updateJournalEntry, deleteJournalEntry } from '@/lib/api/journal'
+import { createHabit, updateHabit, deleteHabit } from '@/lib/api/habits'
+import { createJournalEntry, updateJournalEntry, deleteJournalEntry } from '@/lib/api/journal'
+import { createTransaction } from '@/lib/api/transactions'
+import { createSavingsGoal } from '@/lib/api/savings-goals'
+import { createVisualization } from '@/lib/api/visualizations'
+import { createMemory } from '@/lib/api/memories'
+import { createProgressPhoto } from '@/lib/api/progress-photos'
+import { createSleepRecord, createExerciseRecord, createNutritionRecord } from '@/lib/api/health'
+import { createBook } from '@/lib/api/books'
+import { createMovie } from '@/lib/api/movies'
 import { AuthDebug } from './auth-debug'
 import { AddExpenseModal } from './modals/add-expense-modal'
 import { LogHabitModal } from './modals/log-habit-modal'
@@ -197,16 +205,23 @@ function AppContent() {
     setAppData(data)
   }
 
+  // Replace bulk data updates with individual API calls
   const handleDataUpdate = (newData: AppState) => {
+    // This method is kept for compatibility but should be replaced with individual API calls
+    setAppData(newData)
+  }
+
+  // Helper function to reload data from the database
+  const reloadData = async () => {
     try {
-      setAppData(newData)
-      databaseService.saveData(newData)
+      const data = await databaseService.loadData()
+      setAppData(data)
     } catch (error) {
-      console.error('Failed to save data:', error)
+      console.error('Failed to reload data:', error)
       addToast({
         type: 'error',
         title: 'Database Error',
-        message: error instanceof Error ? error.message : 'Failed to save data.'
+        message: 'Failed to reload data from database'
       })
     }
   }
@@ -493,7 +508,6 @@ function AppContent() {
             onJournalDelete={handleJournalDelete}
             onAddBook={() => setShowAddBookModal(true)}
             onAddMovie={() => setShowAddMovieModal(true)}
-            onAddBadHabit={() => setShowAddBadHabitModal(true)}
           />
         )
       case 'visualization':
@@ -594,14 +608,24 @@ function AppContent() {
         return (
           <ProgressPhotos
             photos={appData.progressPhotos}
-            onAddPhoto={(photo) => {
-              const newPhoto = { ...photo, id: Date.now().toString() }
-              handleDataUpdate({
-                ...appData,
-                progressPhotos: [...appData.progressPhotos, newPhoto]
-              })
+            onAddPhoto={async (photo) => {
+              const result = await createProgressPhoto(photo)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else if (result.data) {
+                await reloadData()
+                addToast({
+                  type: 'success',
+                  message: 'Progress photo added successfully!'
+                })
+              }
             }}
             onUpdatePhoto={(photo) => {
+              // TODO: Implement updateProgressPhoto API call
               const updated = appData.progressPhotos.map(p => p.id === photo.id ? photo : p)
               handleDataUpdate({ ...appData, progressPhotos: updated })
             }}
@@ -611,14 +635,24 @@ function AppContent() {
         return (
           <MemoriesView
             memories={appData.memories}
-            onAddMemory={(memory) => {
-              const newMemory = { ...memory, id: Date.now().toString() }
-              handleDataUpdate({
-                ...appData,
-                memories: [...appData.memories, newMemory]
-              })
+            onAddMemory={async (memory) => {
+              const result = await createMemory(memory)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else if (result.data) {
+                await reloadData()
+                addToast({
+                  type: 'success',
+                  message: 'Memory created successfully!'
+                })
+              }
             }}
             onUpdateMemory={(memory) => {
+              // TODO: Implement updateMemory API call
               const updated = appData.memories.map(m => m.id === memory.id ? memory : m)
               handleDataUpdate({ ...appData, memories: updated })
             }}
@@ -770,17 +804,23 @@ function AppContent() {
       <AddExpenseModal
         isOpen={showAddExpenseModal}
         onClose={() => setShowAddExpenseModal(false)}
-        onSubmit={(transaction) => {
-          const newTransaction = { ...transaction, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            transactions: [...appData!.transactions, newTransaction]
-          })
+        onSubmit={async (transaction) => {
+          const result = await createTransaction(transaction)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            // Reload data to get the updated transactions list
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Transaction added successfully!'
+            })
+          }
           setShowAddExpenseModal(false)
-          addToast({
-            type: 'success',
-            message: 'Transaction added successfully!'
-          })
         }}
       />
 
@@ -810,17 +850,23 @@ function AppContent() {
       <AddJournalModal
         isOpen={showAddJournalModal}
         onClose={() => setShowAddJournalModal(false)}
-        onSubmit={(entry) => {
-          const newEntry = { ...entry, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            journalEntries: [...appData!.journalEntries, newEntry]
-          })
+        onSubmit={async (entry) => {
+          const result = await createJournalEntry(entry)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            // Reload data to get the updated journal entries list
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Journal entry added successfully!'
+            })
+          }
           setShowAddJournalModal(false)
-          addToast({
-            type: 'success',
-            message: 'Journal entry added successfully!'
-          })
         }}
       />
 
@@ -857,58 +903,79 @@ function AppContent() {
       <AddHealthModal
         isOpen={showAddHealthModal}
         onClose={() => setShowAddHealthModal(false)}
-        onSubmitSleep={(record) => {
-          const newRecord = { ...record, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            sleepRecords: [...appData!.sleepRecords, newRecord]
-          })
+        onSubmitSleep={async (record) => {
+          const result = await createSleepRecord(record)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Sleep data logged successfully!'
+            })
+          }
           setShowAddHealthModal(false)
-          addToast({
-            type: 'success',
-            message: 'Sleep data logged successfully!'
-          })
         }}
-        onSubmitExercise={(record) => {
-          const newRecord = { ...record, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            exerciseRecords: [...appData!.exerciseRecords, newRecord]
-          })
+        onSubmitExercise={async (record) => {
+          const result = await createExerciseRecord(record)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Exercise logged successfully!'
+            })
+          }
           setShowAddHealthModal(false)
-          addToast({
-            type: 'success',
-            message: 'Exercise logged successfully!'
-          })
         }}
-        onSubmitNutrition={(record) => {
-          const newRecord = { ...record, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            nutritionRecords: [...appData!.nutritionRecords, newRecord]
-          })
+        onSubmitNutrition={async (record) => {
+          const result = await createNutritionRecord(record)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Nutrition logged successfully!'
+            })
+          }
           setShowAddHealthModal(false)
-          addToast({
-            type: 'success',
-            message: 'Nutrition logged successfully!'
-          })
         }}
       />
 
       <AddHabitModal
         isOpen={showAddHabitModal}
         onClose={() => setShowAddHabitModal(false)}
-        onSubmit={(habit) => {
-          const newHabit = { ...habit, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            habits: [...appData!.habits, newHabit]
-          })
+        onSubmit={async (habit) => {
+          const result = await createHabit(habit)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            // Reload data to get the updated habits list
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Habit created successfully!'
+            })
+          }
           setShowAddHabitModal(false)
-          addToast({
-            type: 'success',
-            message: 'Habit created successfully!'
-          })
         }}
       />
 
@@ -945,34 +1012,44 @@ function AppContent() {
       <AddSavingsGoalModal
         isOpen={showAddSavingsGoalModal}
         onClose={() => setShowAddSavingsGoalModal(false)}
-        onSubmit={(goal) => {
-          const newGoal = { ...goal, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            savingsGoals: [...appData!.savingsGoals, newGoal]
-          })
+        onSubmit={async (goal) => {
+          const result = await createSavingsGoal(goal)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Savings goal created successfully!'
+            })
+          }
           setShowAddSavingsGoalModal(false)
-          addToast({
-            type: 'success',
-            message: 'Savings goal created successfully!'
-          })
         }}
       />
 
       <AddVisualizationModal
         isOpen={showAddVisualizationModal}
         onClose={() => setShowAddVisualizationModal(false)}
-        onSubmit={(visualization) => {
-          const newVisualization = { ...visualization, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            visualizations: [...appData!.visualizations, newVisualization]
-          })
+        onSubmit={async (visualization) => {
+          const result = await createVisualization(visualization)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Visualization created successfully!'
+            })
+          }
           setShowAddVisualizationModal(false)
-          addToast({
-            type: 'success',
-            message: 'Visualization created successfully!'
-          })
         }}
       />
 
@@ -1030,34 +1107,44 @@ function AppContent() {
       <AddMovieModal
         isOpen={showAddMovieModal}
         onClose={() => setShowAddMovieModal(false)}
-        onSubmit={(movie) => {
-          const newMovie = { ...movie, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            movies: [...appData!.movies, newMovie]
-          })
+        onSubmit={async (movie) => {
+          const result = await createMovie(movie)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Movie added successfully!'
+            })
+          }
           setShowAddMovieModal(false)
-          addToast({
-            type: 'success',
-            message: 'Movie added successfully!'
-          })
         }}
       />
 
       <AddBookModal
         isOpen={showAddBookModal}
         onClose={() => setShowAddBookModal(false)}
-        onSubmit={(book) => {
-          const newBook = { ...book, id: Date.now().toString() }
-          handleDataUpdate({
-            ...appData!,
-            books: [...appData!.books, newBook]
-          })
+        onSubmit={async (book) => {
+          const result = await createBook(book)
+          if (result.error) {
+            addToast({
+              type: 'error',
+              title: 'Error',
+              message: result.error
+            })
+          } else if (result.data) {
+            await reloadData()
+            addToast({
+              type: 'success',
+              message: 'Book added successfully!'
+            })
+          }
           setShowAddBookModal(false)
-          addToast({
-            type: 'success',
-            message: 'Book added successfully!'
-          })
         }}
       />
 

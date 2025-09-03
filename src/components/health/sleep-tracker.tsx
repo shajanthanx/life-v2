@@ -40,7 +40,7 @@ export function SleepTracker({ sleepRecords, onAddRecord }: SleepTrackerProps) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -86,45 +86,49 @@ export function SleepTracker({ sleepRecords, onAddRecord }: SleepTrackerProps) {
         <CardContent>
           <div className="space-y-4">
             {recentRecords.map((record) => (
-              <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Date</p>
-                    <p className="font-medium">{formatDate(record.date)}</p>
-                  </div>
-                  
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Bedtime</p>
-                    <p className="font-medium">{new Date(record.bedtime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  </div>
-                  
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Wake Time</p>
-                    <p className="font-medium">{new Date(record.wakeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Duration</p>
-                    <p className="text-lg font-bold">{record.hoursSlept.toFixed(1)}h</p>
-                  </div>
-                  
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Quality</p>
-                    <div className="flex items-center space-x-1">
-                      <span className={`text-lg font-bold ${getQualityColor(record.quality)}`}>
-                        {record.quality}/5
-                      </span>
-                      <Badge className={getQualityColor(record.quality)}>
-                        {getQualityLabel(record.quality)}
-                      </Badge>
+              <div key={record.id} className="p-4 border rounded-lg">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-3">
+                    <div className="text-center sm:text-left">
+                      <p className="text-sm text-muted-foreground">Date</p>
+                      <p className="font-medium">{formatDate(record.date)}</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-center sm:text-left">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Bedtime</p>
+                        <p className="font-medium text-sm">{new Date(record.bedtime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-sm text-muted-foreground">Wake</p>
+                        <p className="font-medium text-sm">{new Date(record.wakeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Score</p>
-                    <p className="text-lg font-bold">{getSleepScore(record.hoursSlept, record.quality)}</p>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Duration</p>
+                      <p className="text-lg font-bold">{record.hoursSlept.toFixed(1)}h</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-muted-foreground">Quality</p>
+                      <div className="flex flex-col items-center space-y-1">
+                        <span className={`text-lg font-bold ${getQualityColor(record.quality)}`}>
+                          {record.quality}/5
+                        </span>
+                        <Badge className={`${getQualityColor(record.quality)} text-xs`}>
+                          {getQualityLabel(record.quality)}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-muted-foreground">Score</p>
+                      <p className="text-lg font-bold">{getSleepScore(record.hoursSlept, record.quality)}</p>
+                    </div>
                   </div>
                 </div>
               </div>
