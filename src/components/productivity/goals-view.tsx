@@ -5,9 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Target, Calendar, CheckCircle2, Trophy, Edit2, Trash2, MoreVertical } from 'lucide-react'
-import { Goal } from '@/types'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { LoadingSpinner, LoadingOverlay } from '@/components/ui/loading-spinner'
+import { Plus, Target, Calendar, CheckCircle2, Trophy, Edit2, Trash2, MoreVertical, TrendingUp } from 'lucide-react'
+import { Goal, Milestone } from '@/types'
 import { formatDate, getProgressPercentage } from '@/lib/utils'
+import { updateMilestone } from '@/lib/api/goals'
+import { useToast } from '@/hooks/use-toast'
 
 interface GoalsViewProps {
   goals: Goal[]
@@ -15,10 +22,16 @@ interface GoalsViewProps {
   onGoalDelete: (goalId: string) => void
   onGoalEdit: (goal: Goal) => void
   onAddGoal: () => void
+  isLoading?: boolean
 }
 
-export function GoalsView({ goals, onGoalUpdate, onGoalDelete, onGoalEdit, onAddGoal }: GoalsViewProps) {
+export function GoalsView({ goals, onGoalUpdate, onGoalDelete, onGoalEdit, onAddGoal, isLoading = false }: GoalsViewProps) {
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all')
+  const [showManualUpdate, setShowManualUpdate] = useState<string | null>(null)
+  const [manualValue, setManualValue] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [operationLoading, setOperationLoading] = useState<string | null>(null)
+  const { addToast } = useToast()
 
   const filteredGoals = goals.filter(goal => {
     switch (filter) {
@@ -63,6 +76,89 @@ export function GoalsView({ goals, onGoalUpdate, onGoalDelete, onGoalEdit, onAdd
   const completedMilestones = (goal: Goal) => goal.milestones.filter(m => m.isCompleted).length
   const totalMilestones = (goal: Goal) => goal.milestones.length
 
+  const handleMilestoneToggle = async (goal: Goal, milestoneId: string, isCompleted: boolean) => {
+    setOperationLoading(milestoneId)
+    try {
+      const { data, error } = await updateMilestone(milestoneId, isCompleted)
+      
+      if (error) {
+        addToast({
+          title: 'Error',
+          message: error,
+          type: 'error'
+        })
+        return
+      }
+
+      // Update the goal with the updated milestone
+      const updatedGoal = {
+        ...goal,
+        milestones: goal.milestones.map(milestone =>
+          milestone.id === milestoneId 
+            ? { ...milestone, isCompleted, completedAt: isCompleted ? new Date() : undefined }
+            : milestone
+        )
+      }
+
+      onGoalUpdate(updatedGoal)
+      
+      addToast({
+        title: 'Success',
+        message: `Milestone ${isCompleted ? 'completed' : 'uncompleted'}!`,
+        type: 'success'
+      })
+    } catch (error) {
+      addToast({
+        title: 'Error', 
+        message: 'Failed to update milestone',
+        type: 'error'
+      })
+    } finally {
+      setOperationLoading(null)
+    }
+  }
+
+  const handleManualProgressUpdate = (goal: Goal) => {
+    const newValue = parseFloat(manualValue)
+    
+    if (isNaN(newValue) || newValue < 0) {
+      addToast({
+        title: 'Invalid Value',
+        message: 'Please enter a valid positive number',
+        type: 'error'
+      })
+      return
+    }
+
+    if (newValue > goal.targetValue) {
+      addToast({
+        title: 'Value Too High',
+        message: `Value cannot exceed target of ${goal.targetValue} ${goal.unit}`,
+        type: 'error'
+      })
+      return
+    }
+
+    const updatedGoal = {
+      ...goal,
+      currentValue: newValue
+    }
+    
+    if (newValue === goal.targetValue) {
+      updatedGoal.isCompleted = true
+    }
+
+    onGoalUpdate(updatedGoal)
+    setShowManualUpdate(null)
+    setManualValue('')
+    
+    addToast({
+      title: 'Progress Updated',
+      message: `Progress updated to ${newValue} ${goal.unit}`,
+      type: 'success'
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -96,13 +192,14 @@ export function GoalsView({ goals, onGoalUpdate, onGoalDelete, onGoalEdit, onAdd
       </div>
 
       {/* Goals Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <LoadingOverlay isLoading={isLoading}>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredGoals.map((goal) => {
           const progress = getProgressPercentage(goal.currentValue, goal.targetValue)
           const timeRemaining = getTimeRemaining(new Date(goal.deadline))
           
           return (
-            <Card key={goal.id} className={goal.isCompleted ? 'bg-green-50 border-green-200' : ''}>
+            <Card key={goal.id} className={`h-full flex flex-col ${goal.isCompleted ? 'bg-green-50 border-green-200' : ''}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -124,66 +221,76 @@ export function GoalsView({ goals, onGoalUpdate, onGoalDelete, onGoalEdit, onAdd
                 </div>
               </CardHeader>
               
-              <CardContent className="space-y-4">
-                {/* Progress */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Progress</span>
-                    <span className="text-sm text-muted-foreground">
-                      {goal.currentValue} / {goal.targetValue} {goal.unit}
-                    </span>
-                  </div>
-                  <Progress value={progress} />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {progress.toFixed(1)}% complete
-                  </p>
-                </div>
-
-                {/* Milestones */}
-                {goal.milestones.length > 0 && (
+              <CardContent className="flex flex-col h-full">
+                <div className="flex-1 space-y-4">
+                  {/* Progress */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Milestones</span>
+                      <span className="text-sm font-medium">Progress</span>
                       <span className="text-sm text-muted-foreground">
-                        {completedMilestones(goal)} / {totalMilestones(goal)}
+                        {goal.currentValue} / {goal.targetValue} {goal.unit}
                       </span>
                     </div>
-                    <div className="space-y-1">
-                      {goal.milestones.slice(0, 3).map((milestone) => (
-                        <div key={milestone.id} className="flex items-center space-x-2 text-sm">
-                          {milestone.isCompleted ? (
-                            <CheckCircle2 className="h-3 w-3 text-green-500" />
-                          ) : (
-                            <div className="h-3 w-3 border rounded-full" />
-                          )}
-                          <span className={milestone.isCompleted ? 'line-through text-muted-foreground' : ''}>
-                            {milestone.title}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    <Progress value={progress} />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {progress.toFixed(1)}% complete
+                    </p>
                   </div>
-                )}
 
-                {/* Deadline */}
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-1 text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span>Due: {formatDate(new Date(goal.deadline))}</span>
+                  {/* Milestones */}
+                  {goal.milestones.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Milestones</span>
+                        <span className="text-sm text-muted-foreground">
+                          {completedMilestones(goal)} / {totalMilestones(goal)}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {goal.milestones.slice(0, 3).map((milestone) => (
+                        <div key={milestone.id} className="flex items-start space-x-3 text-sm">
+                          <div className="relative">
+                            <Checkbox
+                              checked={milestone.isCompleted}
+                              onCheckedChange={(checked) => 
+                                handleMilestoneToggle(goal, milestone.id, !!checked)
+                              }
+                              className="h-4 w-4 mt-0.5"
+                              disabled={operationLoading === milestone.id}
+                            />
+                            {operationLoading === milestone.id && (
+                              <LoadingSpinner size="sm" className="absolute top-0 left-0 h-4 w-4" />
+                            )}
+                          </div>
+                            <span className={milestone.isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}>
+                              {milestone.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Deadline */}
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-1 text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <span>Due: {formatDate(new Date(goal.deadline))}</span>
+                    </div>
+                    <span className={timeRemaining.color}>
+                      {timeRemaining.text}
+                    </span>
                   </div>
-                  <span className={timeRemaining.color}>
-                    {timeRemaining.text}
-                  </span>
                 </div>
 
                 {/* Actions */}
-                <div className="flex space-x-2 pt-2">
+                <div className="flex space-x-2 pt-4 mt-auto border-t">
                   <Button 
                     size="sm" 
                     variant="outline" 
                     className="flex-1"
                     onClick={() => {
-                      // Update current value (simple increment for demo)
+                      // Update current value
                       const updatedGoal = {
                         ...goal,
                         currentValue: Math.min(goal.currentValue + 1, goal.targetValue)
@@ -195,8 +302,55 @@ export function GoalsView({ goals, onGoalUpdate, onGoalDelete, onGoalEdit, onAdd
                     }}
                     disabled={goal.isCompleted}
                   >
-                    Update Progress
+                    +1 Progress
                   </Button>
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        disabled={goal.isCompleted}
+                        onClick={() => {
+                          setShowManualUpdate(goal.id)
+                          setManualValue(goal.currentValue.toString())
+                        }}
+                      >
+                        <TrendingUp className="h-3 w-3" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Update Progress</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium">
+                            Current Progress: {goal.currentValue} / {goal.targetValue} {goal.unit}
+                          </label>
+                        </div>
+                        <div>
+                          <Input
+                            type="number"
+                            placeholder={`Enter new value (max: ${goal.targetValue})`}
+                            value={manualValue}
+                            onChange={(e) => setManualValue(e.target.value)}
+                            min="0"
+                            max={goal.targetValue}
+                            step="0.1"
+                          />
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            onClick={() => handleManualProgressUpdate(goal)}
+                            className="flex-1"
+                          >
+                            Update Progress
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   
                   <Button 
                     size="sm" 
@@ -209,11 +363,7 @@ export function GoalsView({ goals, onGoalUpdate, onGoalDelete, onGoalEdit, onAdd
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => {
-                      if (confirm('Are you sure you want to delete this goal?')) {
-                        onGoalDelete(goal.id)
-                      }
-                    }}
+                    onClick={() => setShowDeleteConfirm(goal.id)}
                   >
                     <Trash2 className="h-3 w-3 text-red-500" />
                   </Button>
@@ -229,7 +379,8 @@ export function GoalsView({ goals, onGoalUpdate, onGoalDelete, onGoalEdit, onAdd
             </Card>
           )
         })}
-      </div>
+        </div>
+      </LoadingOverlay>
 
       {filteredGoals.length === 0 && (
         <Card>
@@ -248,6 +399,22 @@ export function GoalsView({ goals, onGoalUpdate, onGoalDelete, onGoalEdit, onAdd
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        onConfirm={() => {
+          if (showDeleteConfirm) {
+            onGoalDelete(showDeleteConfirm)
+          }
+        }}
+        title="Delete Goal"
+        description="Are you sure you want to delete this goal? This action cannot be undone and will also delete all associated milestones."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   )
 }

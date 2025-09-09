@@ -178,7 +178,6 @@ export async function createIncomeRecord(recordData: Omit<IncomeRecord, 'id'>): 
     const { data, error } = await supabase
       .from('income_records')
       .insert({
-        user_id: userId,
         source_id: recordData.sourceId,
         amount: recordData.amount,
         date: recordData.date.toISOString().split('T')[0],
@@ -215,6 +214,21 @@ export async function updateIncomeRecord(id: string, updates: Partial<IncomeReco
       return { data: null, error: 'Not authenticated' }
     }
 
+    // First verify the income record belongs to a source owned by the user
+    const { data: record, error: verifyError } = await supabase
+      .from('income_records')
+      .select(`
+        *,
+        income_sources!inner(user_id)
+      `)
+      .eq('id', id)
+      .eq('income_sources.user_id', userId)
+      .single()
+
+    if (verifyError || !record) {
+      return { data: null, error: 'Income record not found or access denied' }
+    }
+
     const updateData: any = {}
     if (updates.amount !== undefined) updateData.amount = updates.amount
     if (updates.date !== undefined) updateData.date = updates.date.toISOString().split('T')[0]
@@ -225,7 +239,6 @@ export async function updateIncomeRecord(id: string, updates: Partial<IncomeReco
       .from('income_records')
       .update(updateData)
       .eq('id', id)
-      .eq('user_id', userId)
       .select()
       .single()
 
@@ -256,11 +269,25 @@ export async function deleteIncomeRecord(id: string): Promise<{ success: boolean
       return { success: false, error: 'Not authenticated' }
     }
 
+    // First verify the income record belongs to a source owned by the user
+    const { data: record, error: verifyError } = await supabase
+      .from('income_records')
+      .select(`
+        *,
+        income_sources!inner(user_id)
+      `)
+      .eq('id', id)
+      .eq('income_sources.user_id', userId)
+      .single()
+
+    if (verifyError || !record) {
+      return { success: false, error: 'Income record not found or access denied' }
+    }
+
     const { error } = await supabase
       .from('income_records')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId)
 
     if (error) {
       return { success: false, error: error.message }
@@ -282,8 +309,11 @@ export async function getUserIncomeRecords(): Promise<{ data: IncomeRecord[]; er
 
     const { data: records, error } = await supabase
       .from('income_records')
-      .select('*')
-      .eq('user_id', userId)
+      .select(`
+        *,
+        income_sources!inner(user_id)
+      `)
+      .eq('income_sources.user_id', userId)
       .order('date', { ascending: false })
 
     if (error) {
@@ -329,7 +359,6 @@ export async function getIncomeRecordsBySource(sourceId: string): Promise<{ data
       .from('income_records')
       .select('*')
       .eq('source_id', sourceId)
-      .eq('user_id', userId)
       .order('date', { ascending: false })
 
     if (error) {

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useToast } from '@/hooks/use-toast'
 import { Habit } from '@/types'
 
 interface AddHabitModalProps {
@@ -13,21 +14,23 @@ interface AddHabitModalProps {
 }
 
 export function AddHabitModal({ isOpen, onClose, onSubmit }: AddHabitModalProps) {
+  const { addToast } = useToast()
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: 'health' as Habit['category'],
     frequency: 'daily' as Habit['frequency'],
-    targetValue: '',
-    hasNumericValue: false,
-    unit: ''
+    color: '#3b82f6'
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!formData.name.trim()) {
-      alert('Please enter a habit name')
+      addToast({
+        message: 'Please enter a habit name',
+        type: 'error'
+      })
       return
     }
 
@@ -36,11 +39,9 @@ export function AddHabitModal({ isOpen, onClose, onSubmit }: AddHabitModalProps)
       description: formData.description || undefined,
       category: formData.category,
       frequency: formData.frequency,
-      targetValue: formData.hasNumericValue ? Number(formData.targetValue) || 1 : 1,
+      color: formData.color,
       isActive: true,
       createdAt: new Date(),
-      hasNumericValue: formData.hasNumericValue,
-      unit: formData.hasNumericValue ? formData.unit : undefined,
       records: []
     }
 
@@ -51,9 +52,7 @@ export function AddHabitModal({ isOpen, onClose, onSubmit }: AddHabitModalProps)
       description: '',
       category: 'health',
       frequency: 'daily',
-      targetValue: '',
-      hasNumericValue: false,
-      unit: ''
+      color: '#3b82f6'
     })
   }
 
@@ -68,7 +67,7 @@ export function AddHabitModal({ isOpen, onClose, onSubmit }: AddHabitModalProps)
           <div>
             <label className="text-sm font-medium">Habit Name</label>
             <Input
-              placeholder="e.g., Drink 8 glasses of water"
+              placeholder="e.g., Exercise, Read, Meditate"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               required
@@ -111,43 +110,19 @@ export function AddHabitModal({ isOpen, onClose, onSubmit }: AddHabitModalProps)
             >
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
             </select>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="hasNumericValue"
-              checked={formData.hasNumericValue}
-              onChange={(e) => setFormData(prev => ({ ...prev, hasNumericValue: e.target.checked }))}
-            />
-            <label htmlFor="hasNumericValue" className="text-sm font-medium">
-              Track numeric value (e.g., glasses of water, minutes exercised)
-            </label>
-          </div>
 
-          {formData.hasNumericValue && (
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-sm font-medium">Target Value</label>
-                <Input
-                  type="number"
-                  placeholder="8"
-                  value={formData.targetValue}
-                  onChange={(e) => setFormData(prev => ({ ...prev, targetValue: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Unit</label>
-                <Input
-                  placeholder="glasses, minutes, pages"
-                  value={formData.unit}
-                  onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))}
-                />
-              </div>
-            </div>
-          )}
+          <div>
+            <label className="text-sm font-medium">Color</label>
+            <Input
+              type="color"
+              value={formData.color}
+              onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+              className="w-full h-10"
+            />
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

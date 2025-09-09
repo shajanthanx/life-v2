@@ -203,7 +203,7 @@ export function GlobalSearch({ data, onNavigate, isOpen, onClose }: GlobalSearch
           id: habit.id,
           type: 'Bad Habit',
           title: habit.name,
-          description: habit.description || `Reducing ${habit.unit}`,
+          description: habit.description || 'Bad habit tracking',
           tab: 'lifestyle',
           subtab: 'badhabits',
           icon: TrendingDown

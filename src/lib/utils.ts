@@ -1,11 +1,15 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { format as dateFnsFormat } from "date-fns"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(date: Date): string {
+export function formatDate(date: Date, formatStr?: string): string {
+  if (formatStr) {
+    return dateFnsFormat(date, formatStr)
+  }
   return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",

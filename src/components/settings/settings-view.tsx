@@ -1,12 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { useToast } from '@/hooks/use-toast'
+import { getUserSettings, saveUserSettings, UserSettings, DEFAULT_SETTINGS } from '@/lib/api/settings'
+import { useSettings } from '@/contexts/settings-context'
 import { 
   Settings, 
   User, 
@@ -17,7 +21,20 @@ import {
   Download, 
   Upload,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Grid,
+  Target,
+  CheckCircle2,
+  Repeat,
+  StickyNote,
+  Heart,
+  DollarSign,
+  BookOpen,
+  Eye,
+  Gift,
+  Album,
+  Briefcase,
+  TrendingUp
 } from 'lucide-react'
 
 interface SettingsViewProps {
@@ -28,35 +45,55 @@ interface SettingsViewProps {
 
 export function SettingsView({ onDataExport, onDataImport, onDataReset }: SettingsViewProps) {
   const [activeTab, setActiveTab] = useState('profile')
-  const [settings, setSettings] = useState({
-    profile: {
-      name: 'Demo User',
-      email: 'demo@lifemanager.com',
-      avatar: '',
-      timezone: 'America/New_York'
-    },
-    notifications: {
-      taskReminders: true,
-      habitReminders: true,
-      budgetAlerts: true,
-      goalDeadlines: true,
-      dailyReflection: true,
-      gratitudeReminder: true
-    },
-    preferences: {
-      currency: 'USD',
-      dateFormat: 'MM/DD/YYYY',
-      weekStartsOn: 'Sunday',
-      darkMode: false,
-      compactView: false,
-      showMotivationalQuotes: true
-    },
-    privacy: {
-      dataAnalytics: false,
-      shareProgress: false,
-      publicProfile: false
+  const [settings, setSettings] = useState<UserSettings & { profile: { name: string; email: string; avatar: string; timezone: string } }>(
+    {
+      ...DEFAULT_SETTINGS,
+      profile: {
+        name: '',
+        email: '',
+        avatar: '',
+        timezone: 'America/New_York'
+      }
     }
-  })
+  )
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const { addToast } = useToast()
+  const { updateEnabledModules } = useSettings()
+
+  // Load settings from database on component mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setIsLoading(true)
+        const { data, error } = await getUserSettings()
+        
+        if (error) {
+          addToast({
+            message: `Failed to load settings: ${error}`,
+            type: 'error'
+          })
+          return
+        }
+
+        if (data) {
+          setSettings(prev => ({
+            ...data,
+            profile: prev.profile // Keep profile settings separate for now
+          }))
+        }
+      } catch (error) {
+        addToast({
+          message: 'Failed to load settings',
+          type: 'error'
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadSettings()
+  }, [addToast])
 
   const handleSettingChange = (category: string, key: string, value: any) => {
     setSettings(prev => ({
@@ -67,6 +104,39 @@ export function SettingsView({ onDataExport, onDataImport, onDataReset }: Settin
       }
     }))
   }
+
+  const handleModuleToggle = (moduleId: string) => {
+    setSettings(prev => {
+      const currentEnabled = prev.modules.enabled
+      const newEnabled = currentEnabled.includes(moduleId)
+        ? currentEnabled.filter(id => id !== moduleId)
+        : [...currentEnabled, moduleId]
+      
+      return {
+        ...prev,
+        modules: {
+          ...prev.modules,
+          enabled: newEnabled
+        }
+      }
+    })
+  }
+
+  const availableModules = [
+    { id: 'goals', label: 'Goals', icon: Target, description: 'Track your progress towards achieving your dreams' },
+    { id: 'tasks', label: 'Tasks', icon: CheckCircle2, description: 'Manage your daily tasks and to-dos' },
+    { id: 'habits', label: 'Habits', icon: Repeat, description: 'Build positive habits for a better life' },
+    { id: 'notes', label: 'Quick Notes', icon: StickyNote, description: 'Capture quick thoughts and set reminders' },
+    { id: 'health', label: 'Health Tracking', icon: Heart, description: 'Monitor your physical and mental wellbeing' },
+    { id: 'finance', label: 'Finance', icon: DollarSign, description: 'Track spending, budgets, and savings' },
+    { id: 'lifestyle', label: 'Lifestyle', icon: BookOpen, description: 'Journal, entertainment, and personal interests' },
+    { id: 'visualization', label: 'Vision Board', icon: Eye, description: 'Visualize your dreams and aspirations' },
+    { id: 'gifts', label: 'Gift Planning', icon: Gift, description: 'Plan and track gifts for special occasions' },
+    { id: 'memories', label: 'Memories', icon: Album, description: 'Preserve and cherish your special moments' },
+    { id: 'freelancing', label: 'Freelancing', icon: Briefcase, description: 'Manage projects and track time' },
+    { id: 'secrets', label: 'Secrets Manager', icon: Shield, description: 'Securely store sensitive information' },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp, description: 'Insights and data visualization' }
+  ]
 
   const handleExportData = () => {
     onDataExport()
@@ -103,6 +173,21 @@ export function SettingsView({ onDataExport, onDataImport, onDataReset }: Settin
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold">Settings</h2>
+          <p className="text-muted-foreground">Manage your preferences and account settings</p>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner className="h-8 w-8" />
+          <span className="ml-2">Loading settings...</span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -111,12 +196,104 @@ export function SettingsView({ onDataExport, onDataImport, onDataReset }: Settin
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="modules">Modules</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="data">Data & Privacy</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="modules" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Grid className="h-5 w-5" />
+                <span>Module Selection</span>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Choose which modules you want to see in your sidebar. Select up to 10 modules.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {availableModules.map((module) => {
+                  const Icon = module.icon
+                  const isEnabled = settings.modules.enabled.includes(module.id)
+                  
+                  return (
+                    <div
+                      key={module.id}
+                      className={`flex items-start space-x-3 p-4 rounded-lg border transition-colors ${
+                        isEnabled ? 'bg-primary/5 border-primary' : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <Switch
+                        checked={isEnabled}
+                        onCheckedChange={() => handleModuleToggle(module.id)}
+                        disabled={!isEnabled && settings.modules.enabled.length >= 10}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <Icon className="h-4 w-4" />
+                          <span className="font-medium">{module.label}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {module.description}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex items-center justify-between pt-4 border-t">
+                <span className="text-sm text-muted-foreground">
+                  {settings.modules.enabled.length} of 10 modules selected
+                </span>
+                <Button 
+                  onClick={async () => {
+                    try {
+                      setIsSaving(true)
+                      const { error } = await saveUserSettings({
+                        modules: settings.modules,
+                        notifications: settings.notifications,
+                        preferences: settings.preferences,
+                        privacy: settings.privacy
+                      })
+                      
+                      if (error) {
+                        addToast({
+                          message: `Failed to save settings: ${error}`,
+                          type: 'error'
+                        })
+                        return
+                      }
+
+                      // Update global settings state to trigger UI updates
+                      updateEnabledModules(settings.modules.enabled)
+                      
+                      addToast({
+                        message: 'Settings saved successfully!',
+                        type: 'success'
+                      })
+                    } catch (error) {
+                      addToast({
+                        message: 'Failed to save settings',
+                        type: 'error'
+                      })
+                    } finally {
+                      setIsSaving(false)
+                    }
+                  }}
+                  disabled={isSaving}
+                >
+                  {isSaving ? <LoadingSpinner className="mr-2" /> : null}
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="profile" className="mt-6">
           <Card>

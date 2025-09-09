@@ -331,7 +331,6 @@ export async function createTimeEntry(entryData: Omit<TimeEntry, 'id'>): Promise
     const { data, error } = await supabase
       .from('time_entries')
       .insert({
-        user_id: userId,
         project_id: entryData.projectId,
         date: entryData.date.toISOString(),
         hours: entryData.hours,
@@ -368,6 +367,21 @@ export async function updateTimeEntry(id: string, updates: Partial<TimeEntry>): 
       return { data: null, error: 'Not authenticated' }
     }
 
+    // First verify the time entry belongs to a project owned by the user
+    const { data: timeEntry, error: verifyError } = await supabase
+      .from('time_entries')
+      .select(`
+        *,
+        freelance_projects!inner(user_id)
+      `)
+      .eq('id', id)
+      .eq('freelance_projects.user_id', userId)
+      .single()
+
+    if (verifyError || !timeEntry) {
+      return { data: null, error: 'Time entry not found or access denied' }
+    }
+
     const updateData: any = {}
     if (updates.date !== undefined) updateData.date = updates.date.toISOString()
     if (updates.hours !== undefined) updateData.hours = updates.hours
@@ -378,7 +392,6 @@ export async function updateTimeEntry(id: string, updates: Partial<TimeEntry>): 
       .from('time_entries')
       .update(updateData)
       .eq('id', id)
-      .eq('user_id', userId)
       .select()
       .single()
 
@@ -409,11 +422,25 @@ export async function deleteTimeEntry(id: string): Promise<{ success: boolean; e
       return { success: false, error: 'Not authenticated' }
     }
 
+    // First verify the time entry belongs to a project owned by the user
+    const { data: timeEntry, error: verifyError } = await supabase
+      .from('time_entries')
+      .select(`
+        *,
+        freelance_projects!inner(user_id)
+      `)
+      .eq('id', id)
+      .eq('freelance_projects.user_id', userId)
+      .single()
+
+    if (verifyError || !timeEntry) {
+      return { success: false, error: 'Time entry not found or access denied' }
+    }
+
     const { error } = await supabase
       .from('time_entries')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId)
 
     if (error) {
       return { success: false, error: error.message }
@@ -435,8 +462,11 @@ export async function getUserTimeEntries(): Promise<{ data: TimeEntry[]; error: 
 
     const { data: entries, error } = await supabase
       .from('time_entries')
-      .select('*')
-      .eq('user_id', userId)
+      .select(`
+        *,
+        freelance_projects!inner(user_id)
+      `)
+      .eq('freelance_projects.user_id', userId)
       .order('date', { ascending: false })
 
     if (error) {
@@ -466,10 +496,21 @@ export async function getTimeEntriesByProject(projectId: string): Promise<{ data
       return { data: [], error: 'Not authenticated' }
     }
 
+    // First verify the project belongs to the user
+    const { data: project, error: projectError } = await supabase
+      .from('freelance_projects')
+      .select('id')
+      .eq('id', projectId)
+      .eq('user_id', userId)
+      .single()
+
+    if (projectError || !project) {
+      return { data: [], error: 'Project not found or access denied' }
+    }
+
     const { data: entries, error } = await supabase
       .from('time_entries')
       .select('*')
-      .eq('user_id', userId)
       .eq('project_id', projectId)
       .order('date', { ascending: false })
 

@@ -1,9 +1,9 @@
 'use client'
 
-
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { authService } from '@/lib/auth'
+import { useSettings } from '@/contexts/settings-context'
 import {
   Home,
   Target,
@@ -20,7 +20,10 @@ import {
   Album,
   Minus,
   Shield,
-  Briefcase
+  Briefcase,
+  CheckCircle2,
+  Repeat,
+  StickyNote
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -31,7 +34,10 @@ interface SidebarProps {
 
 const navigationItems = [
   { id: 'dashboard', label: 'Home', icon: Home },
-  { id: 'productivity', label: 'Goals & Tasks', icon: Target },
+  { id: 'goals', label: 'Goals', icon: Target },
+  { id: 'tasks', label: 'Tasks', icon: CheckCircle2 },
+  { id: 'habits', label: 'Habits', icon: Repeat },
+  { id: 'notes', label: 'Quick Notes', icon: StickyNote },
   { id: 'badhabits', label: 'Bad Habits', icon: Minus },
   { id: 'health', label: 'Health Tracking', icon: Heart },
   { id: 'progress', label: 'Progress Photos', icon: Camera },
@@ -48,6 +54,13 @@ const navigationItems = [
 
 export function Sidebar({ activeTab, onTabChange, className }: SidebarProps) {
   const user = authService.getCurrentUser()
+  const { enabledModules, isLoading } = useSettings()
+
+  const filteredNavigation = navigationItems.filter(item => 
+    item.id === 'dashboard' || 
+    item.id === 'settings' || 
+    enabledModules.includes(item.id)
+  )
 
   const handleLogout = () => {
     authService.logout()
@@ -72,7 +85,7 @@ export function Sidebar({ activeTab, onTabChange, className }: SidebarProps) {
       {/* Navigation - Scrollable */}
       <nav className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-1">
-          {navigationItems.map((item) => {
+          {filteredNavigation.map((item) => {
             const Icon = item.icon
             const isActive = activeTab === item.id
             

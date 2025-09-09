@@ -10,7 +10,7 @@ import { ProgressPhoto } from '@/types'
 import { formatDate } from '@/lib/utils'
 import { Camera, Calendar, TrendingUp, Plus } from 'lucide-react'
 import { uploadProgressPhoto } from '@/lib/image-utils'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface ProgressPhotosProps {
   photos: ProgressPhoto[]

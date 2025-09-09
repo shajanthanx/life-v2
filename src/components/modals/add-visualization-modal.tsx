@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Visualization } from '@/types'
 import { uploadVisualizationImage } from '@/lib/image-utils'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface AddVisualizationModalProps {
   isOpen: boolean

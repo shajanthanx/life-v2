@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { LoadingOverlay } from '@/components/ui/loading-spinner'
 import { Plus, Calendar, Clock, AlertCircle, CheckCircle2, Filter, Edit2, Trash2 } from 'lucide-react'
 import { Task } from '@/types'
 import { formatDate } from '@/lib/utils'
@@ -15,11 +17,13 @@ interface TasksViewProps {
   onTaskEdit: (task: Task) => void
   onTaskDelete: (taskId: string) => void
   onAddTask: () => void
+  isLoading?: boolean
 }
 
-export function TasksView({ tasks, onTaskUpdate, onTaskEdit, onTaskDelete, onAddTask }: TasksViewProps) {
+export function TasksView({ tasks, onTaskUpdate, onTaskEdit, onTaskDelete, onAddTask, isLoading = false }: TasksViewProps) {
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed' | 'overdue'>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
 
   const now = new Date()
   
@@ -146,7 +150,8 @@ export function TasksView({ tasks, onTaskUpdate, onTaskEdit, onTaskDelete, onAdd
       </div>
 
       {/* Tasks List */}
-      <div className="space-y-4">
+      <LoadingOverlay isLoading={isLoading}>
+        <div className="space-y-4">
         {filteredTasks.map((task) => (
           <Card 
             key={task.id} 
@@ -243,11 +248,7 @@ export function TasksView({ tasks, onTaskUpdate, onTaskEdit, onTaskDelete, onAdd
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => {
-                            if (confirm('Are you sure you want to delete this task?')) {
-                              onTaskDelete(task.id)
-                            }
-                          }}
+                          onClick={() => setShowDeleteConfirm(task.id)}
                         >
                           <Trash2 className="h-3 w-3 text-red-500" />
                         </Button>
@@ -259,7 +260,8 @@ export function TasksView({ tasks, onTaskUpdate, onTaskEdit, onTaskDelete, onAdd
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      </LoadingOverlay>
 
       {filteredTasks.length === 0 && (
         <Card>
@@ -278,6 +280,22 @@ export function TasksView({ tasks, onTaskUpdate, onTaskEdit, onTaskDelete, onAdd
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        onConfirm={() => {
+          if (showDeleteConfirm) {
+            onTaskDelete(showDeleteConfirm)
+          }
+        }}
+        title="Delete Task"
+        description="Are you sure you want to delete this task? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   )
 }

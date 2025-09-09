@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SleepRecord, ExerciseRecord, NutritionRecord } from '@/types'
 import { handleImageUpload } from '@/lib/image-utils'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface AddHealthModalProps {
   isOpen: boolean

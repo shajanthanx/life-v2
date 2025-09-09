@@ -187,6 +187,51 @@ export async function getUserGoals(): Promise<{ data: Goal[]; error: string | nu
   }
 }
 
+export async function updateMilestone(milestoneId: string, isCompleted: boolean): Promise<{ data: Milestone | null; error: string | null }> {
+  try {
+    const userId = authService.getUserId()
+    if (!userId) {
+      return { data: null, error: 'Not authenticated' }
+    }
+
+    // Update the milestone
+    const { data, error } = await supabase
+      .from('milestones')
+      .update({
+        is_completed: isCompleted,
+        completed_at: isCompleted ? new Date().toISOString() : null
+      })
+      .eq('id', milestoneId)
+      .select(`
+        *,
+        goals!inner(user_id)
+      `)
+      .single()
+
+    if (error) {
+      return { data: null, error: error.message }
+    }
+
+    // Verify the milestone belongs to the current user
+    if (data.goals.user_id !== userId) {
+      return { data: null, error: 'Unauthorized' }
+    }
+
+    const transformedMilestone: Milestone = {
+      id: data.id,
+      title: data.title,
+      value: data.value,
+      isCompleted: data.is_completed,
+      completedAt: data.completed_at ? new Date(data.completed_at) : undefined
+    }
+
+    return { data: transformedMilestone, error: null }
+
+  } catch (error) {
+    return { data: null, error: 'Failed to update milestone' }
+  }
+}
+
 async function getGoalWithMilestones(goalId: string): Promise<Goal | null> {
   try {
     const { data: goal, error } = await supabase

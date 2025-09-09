@@ -1,133 +1,197 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { useToast } from '@/hooks/use-toast'
 import { Habit, HabitRecord } from '@/types'
+import { logHabitProgress } from '@/lib/api/habits'
+import { formatDate } from '@/lib/utils'
+import { Calendar, Target, Clock, Save } from 'lucide-react'
 
 interface LogHabitModalProps {
   isOpen: boolean
   onClose: () => void
-  habits: Habit[]
-  onLogHabit: (habitId: string, record: Omit<HabitRecord, 'id' | 'habitId'>) => void
+  habit: Habit | null
+  onSuccess: (updatedRecord: HabitRecord) => void
+  initialDate?: Date
 }
 
-export function LogHabitModal({ isOpen, onClose, habits, onLogHabit }: LogHabitModalProps) {
-  const [selectedHabitId, setSelectedHabitId] = useState('')
-  const [value, setValue] = useState('')
-  const [isCompleted, setIsCompleted] = useState(true)
+export function LogHabitModal({ isOpen, onClose, habit, onSuccess, initialDate }: LogHabitModalProps) {
+  const [formData, setFormData] = useState({
+    date: initialDate ? formatDate(initialDate, 'yyyy-MM-dd') : formatDate(new Date(), 'yyyy-MM-dd'),
+    notes: ''
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const { addToast } = useToast()
 
-  const selectedHabit = habits.find(h => h.id === selectedHabitId)
+  // Reset form when modal opens/closes or habit changes
+  useEffect(() => {
+    if (isOpen && habit) {
+      const dateToUse = initialDate || new Date()
+      const existingRecord = habit.records.find(record => 
+        formatDate(record.date, 'yyyy-MM-dd') === formatDate(dateToUse, 'yyyy-MM-dd')
+      )
+      
+      setFormData({
+        date: formatDate(dateToUse, 'yyyy-MM-dd'),
+        notes: existingRecord?.notes || ''
+      })
+    }
+  }, [isOpen, habit, initialDate])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!selectedHabitId) {
-      alert('Please select a habit')
-      return
-    }
+    if (!habit) return
 
-    const record: Omit<HabitRecord, 'id' | 'habitId'> = {
-      date: new Date(),
-      isCompleted,
-      value: selectedHabit?.hasNumericValue ? Number(value) || 0 : undefined
-    }
+    try {
+      setIsLoading(true)
+      
+      const recordData = {
+        date: new Date(formData.date),
+        isCompleted: true, // Simply mark as completed when logging
+        notes: formData.notes.trim() || undefined
+      }
 
-    onLogHabit(selectedHabitId, record)
-    onClose()
-    setSelectedHabitId('')
-    setValue('')
-    setIsCompleted(true)
+      const { data, error } = await logHabitProgress(habit.id, recordData)
+      
+      if (error) {
+        addToast({
+          message: `Failed to log habit: ${error}`,
+          type: 'error'
+        })
+        return
+      }
+
+      if (data) {
+        addToast({
+          message: `${habit.name} logged successfully!`,
+          type: 'success'
+        })
+        onSuccess(data)
+        onClose()
+      }
+    } catch (error) {
+      addToast({
+        message: 'Failed to log habit progress',
+        type: 'error'
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
+
+  // Check if habit is already logged for this date
+  const existingRecord = habit?.records.find(record => 
+    formatDate(record.date, 'yyyy-MM-dd') === formData.date
+  )
+  const isAlreadyLogged = existingRecord?.isCompleted || false
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Log Habit</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <div 
+              className="w-4 h-4 rounded-full" 
+              style={{ backgroundColor: habit?.color || '#6b7280' }}
+            />
+            Log {habit?.name}
+          </DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Select Habit</label>
-            <select 
-              className="w-full p-2 border rounded-md"
-              value={selectedHabitId}
-              onChange={(e) => setSelectedHabitId(e.target.value)}
-              required
-            >
-              <option value="">Choose a habit...</option>
-              {habits.filter(h => h.isActive).map(habit => (
-                <option key={habit.id} value={habit.id}>
-                  {habit.name}
-                </option>
-              ))}
-            </select>
-          </div>
 
-          {selectedHabit && (
-            <>
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>{selectedHabit.name}</strong>
-                  {selectedHabit.description && (
-                    <>
-                      <br />
-                      {selectedHabit.description}
-                    </>
-                  )}
+        {habit && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Habit Info */}
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-muted-foreground" />
+                  <span>Mark as completed</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="capitalize">{habit.frequency}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Date Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="date" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Date
+              </Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                max={formatDate(new Date(), 'yyyy-MM-dd')} // Can't log future dates
+                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Completion Status */}
+            {isAlreadyLogged && (
+              <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                  <Target className="h-4 w-4" />
+                  <span className="font-medium">Already completed for this date</span>
+                </div>
+                <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                  You can update the notes or log it again to refresh the timestamp.
                 </p>
               </div>
+            )}
 
-              <div>
-                <label className="text-sm font-medium">Status</label>
-                <div className="flex space-x-2 mt-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={isCompleted ? 'default' : 'outline'}
-                    onClick={() => setIsCompleted(true)}
-                  >
-                    ✅ Completed
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={!isCompleted ? 'default' : 'outline'}
-                    onClick={() => setIsCompleted(false)}
-                  >
-                    ❌ Missed
-                  </Button>
-                </div>
-              </div>
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add any notes about this entry..."
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={2}
+                disabled={isLoading}
+              />
+            </div>
 
-              {selectedHabit.hasNumericValue && isCompleted && (
-                <div>
-                  <label className="text-sm font-medium">
-                    Value {selectedHabit.unit && `(${selectedHabit.unit})`}
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    placeholder={`Enter ${selectedHabit.unit || 'value'}`}
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                  />
-                </div>
-              )}
-            </>
-          )}
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!selectedHabitId}>
-              Log Habit
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <LoadingSpinner className="mr-2 h-4 w-4" />
+                    Logging...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {isAlreadyLogged ? 'Update Completion' : 'Mark Complete'}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   )

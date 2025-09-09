@@ -18,6 +18,7 @@ import { getUserMemories } from './api/memories'
 import { getUserProgressPhotos } from './api/progress-photos'
 import { getUserSecrets } from './api/secrets'
 import { getUserFreelanceProjects, getUserTimeEntries } from './api/freelancing'
+import { getUserNotes } from './api/notes'
 
 export class DatabaseService {
   private static instance: DatabaseService
@@ -59,7 +60,8 @@ export class DatabaseService {
         progressPhotos,
         secrets,
         freelanceProjects,
-        timeEntries
+        timeEntries,
+        notes
       ] = await Promise.all([
         getUserGoals(),
         getUserTasks(),
@@ -82,7 +84,8 @@ export class DatabaseService {
         getUserProgressPhotos(),
         getUserSecrets(),
         getUserFreelanceProjects(),
-        getUserTimeEntries()
+        getUserTimeEntries(),
+        getUserNotes()
       ])
 
       return {
@@ -112,13 +115,18 @@ export class DatabaseService {
         memories: memories.data || [],
         secrets: secrets.data || [],
         freelanceProjects: freelanceProjects.data || [],
-        timeEntries: timeEntries.data || []
+        timeEntries: timeEntries.data || [],
+        notes: notes.data || []
       }
 
     } catch (error) {
       console.error('Error loading data:', error)
       return this.getEmptyAppState()
     }
+  }
+
+  getInitialData(): AppState {
+    return this.getEmptyAppState()
   }
 
   private getEmptyAppState(): AppState {
@@ -149,7 +157,8 @@ export class DatabaseService {
       memories: [],
       secrets: [],
       freelanceProjects: [],
-      timeEntries: []
+      timeEntries: [],
+      notes: []
     }
   }
 
@@ -272,16 +281,7 @@ export class DatabaseService {
 
   // Health Records - now handled by dedicated API
 
-  // This method is kept for compatibility but doesn't save to localStorage anymore
-  saveData(data: AppState): void {
-    // Data is automatically saved to Supabase when created/updated
-    console.log('Data saving is now handled automatically by Supabase')
-  }
 
-  // Get initial/mock data - kept for compatibility
-  getInitialData(): AppState {
-    return this.getEmptyAppState()
-  }
 }
 
 export const databaseService = DatabaseService.getInstance()

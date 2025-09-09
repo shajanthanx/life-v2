@@ -48,8 +48,6 @@ export interface Habit {
   name: string
   description?: string
   category: 'health' | 'productivity' | 'mindfulness' | 'fitness' | 'learning'
-  target: number
-  unit: string
   frequency: 'daily' | 'weekly'
   color: string
   isActive: boolean
@@ -61,7 +59,6 @@ export interface HabitRecord {
   id: string
   habitId: string
   date: Date
-  value: number
   isCompleted: boolean
   notes?: string
 }
@@ -186,8 +183,6 @@ export interface BadHabit {
   id: string
   name: string
   description?: string
-  unit: string
-  targetReduction: number
   records: BadHabitRecord[]
   createdAt: Date
 }
@@ -196,7 +191,7 @@ export interface BadHabitRecord {
   id: string
   habitId: string
   date: Date
-  count: number
+  isOccurred: boolean
   notes?: string
 }
 
@@ -328,6 +323,9 @@ export interface AppState {
   secrets: Secret[]
   freelanceProjects: FreelanceProject[]
   timeEntries: TimeEntry[]
+  
+  // Notes data
+  notes: Note[]
 }
 
 // Progress and Memories Types
@@ -403,6 +401,15 @@ export interface TimeEntry {
   hours: number
   description: string
   billable: boolean
+}
+
+export interface Note {
+  id: string
+  content: string
+  reminderDate?: Date
+  isCompleted: boolean
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface ProjectDocument {

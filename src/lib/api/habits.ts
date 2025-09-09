@@ -16,8 +16,6 @@ export async function createHabit(habitData: Omit<Habit, 'id' | 'createdAt' | 'r
         name: habitData.name,
         description: habitData.description,
         category: habitData.category,
-        target: habitData.target,
-        unit: habitData.unit,
         frequency: habitData.frequency,
         color: habitData.color,
         is_active: habitData.isActive
@@ -34,8 +32,6 @@ export async function createHabit(habitData: Omit<Habit, 'id' | 'createdAt' | 'r
       name: data.name,
       description: data.description,
       category: data.category,
-      target: data.target,
-      unit: data.unit,
       frequency: data.frequency,
       color: data.color,
       isActive: data.is_active,
@@ -61,8 +57,6 @@ export async function updateHabit(id: string, updates: Partial<Habit>): Promise<
     if (updates.name !== undefined) updateData.name = updates.name
     if (updates.description !== undefined) updateData.description = updates.description
     if (updates.category !== undefined) updateData.category = updates.category
-    if (updates.target !== undefined) updateData.target = updates.target
-    if (updates.unit !== undefined) updateData.unit = updates.unit
     if (updates.frequency !== undefined) updateData.frequency = updates.frequency
     if (updates.color !== undefined) updateData.color = updates.color
     if (updates.isActive !== undefined) updateData.is_active = updates.isActive
@@ -139,8 +133,6 @@ export async function getUserHabits(): Promise<{ data: Habit[]; error: string | 
       name: habit.name,
       description: habit.description,
       category: habit.category,
-      target: habit.target,
-      unit: habit.unit,
       frequency: habit.frequency,
       color: habit.color,
       isActive: habit.is_active,
@@ -149,7 +141,6 @@ export async function getUserHabits(): Promise<{ data: Habit[]; error: string | 
         id: record.id,
         habitId: record.habit_id,
         date: new Date(record.date),
-        value: record.value,
         isCompleted: record.is_completed,
         notes: record.notes
       }))
@@ -165,6 +156,7 @@ export async function getUserHabits(): Promise<{ data: Habit[]; error: string | 
 export async function logHabitProgress(habitId: string, recordData: Omit<HabitRecord, 'id' | 'habitId'>): Promise<{ data: HabitRecord | null; error: string | null }> {
   try {
     const userId = authService.getUserId()
+    
     if (!userId) {
       return { data: null, error: 'Not authenticated' }
     }
@@ -181,14 +173,23 @@ export async function logHabitProgress(habitId: string, recordData: Omit<HabitRe
       return { data: null, error: 'Habit not found or access denied' }
     }
 
+    // Format date as local date string (YYYY-MM-DD) without timezone conversion
+    const year = recordData.date.getFullYear()
+    const month = String(recordData.date.getMonth() + 1).padStart(2, '0')
+    const day = String(recordData.date.getDate()).padStart(2, '0')
+    const localDateString = `${year}-${month}-${day}`
+
+    const dbPayload = {
+      habit_id: habitId,
+      date: localDateString, // Store as local date only (no timezone conversion)
+      is_completed: recordData.isCompleted,
+      notes: recordData.notes
+    }
+
     const { data, error } = await supabase
       .from('habit_records')
-      .upsert({
-        habit_id: habitId,
-        date: recordData.date.toISOString().split('T')[0], // Store as date only
-        value: recordData.value,
-        is_completed: recordData.isCompleted,
-        notes: recordData.notes
+      .upsert(dbPayload, {
+        onConflict: 'habit_id,date'
       })
       .select()
       .single()
@@ -201,7 +202,6 @@ export async function logHabitProgress(habitId: string, recordData: Omit<HabitRe
       id: data.id,
       habitId: data.habit_id,
       date: new Date(data.date),
-      value: data.value,
       isCompleted: data.is_completed,
       notes: data.notes
     }
@@ -209,6 +209,7 @@ export async function logHabitProgress(habitId: string, recordData: Omit<HabitRe
     return { data: transformedRecord, error: null }
 
   } catch (error) {
+    console.error('❌ API: Exception in logHabitProgress:', error)
     return { data: null, error: 'Failed to log habit progress' }
   }
 }
@@ -239,11 +240,19 @@ export async function getHabitRecords(habitId: string, startDate?: Date, endDate
       .order('date', { ascending: false })
 
     if (startDate) {
-      query = query.gte('date', startDate.toISOString().split('T')[0])
+      const startYear = startDate.getFullYear()
+      const startMonth = String(startDate.getMonth() + 1).padStart(2, '0')
+      const startDay = String(startDate.getDate()).padStart(2, '0')
+      const startDateString = `${startYear}-${startMonth}-${startDay}`
+      query = query.gte('date', startDateString)
     }
 
     if (endDate) {
-      query = query.lte('date', endDate.toISOString().split('T')[0])
+      const endYear = endDate.getFullYear()
+      const endMonth = String(endDate.getMonth() + 1).padStart(2, '0')
+      const endDay = String(endDate.getDate()).padStart(2, '0')
+      const endDateString = `${endYear}-${endMonth}-${endDay}`
+      query = query.lte('date', endDateString)
     }
 
     const { data: records, error } = await query
@@ -256,7 +265,6 @@ export async function getHabitRecords(habitId: string, startDate?: Date, endDate
       id: record.id,
       habitId: record.habit_id,
       date: new Date(record.date),
-      value: record.value,
       isCompleted: record.is_completed,
       notes: record.notes
     }))
@@ -286,8 +294,6 @@ async function getHabitWithRecords(habitId: string): Promise<Habit | null> {
       name: habit.name,
       description: habit.description,
       category: habit.category,
-      target: habit.target,
-      unit: habit.unit,
       frequency: habit.frequency,
       color: habit.color,
       isActive: habit.is_active,
@@ -296,7 +302,6 @@ async function getHabitWithRecords(habitId: string): Promise<Habit | null> {
         id: record.id,
         habitId: record.habit_id,
         date: new Date(record.date),
-        value: record.value,
         isCompleted: record.is_completed,
         notes: record.notes
       }))

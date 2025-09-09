@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Plus, Calendar, Flame, Target, TrendingUp, CheckCircle2, Edit2, Trash2 } from 'lucide-react'
-import { Habit } from '@/types'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { LoadingOverlay } from '@/components/ui/loading-spinner'
+import { LogHabitModal } from '../modals/log-habit-modal'
+import { Plus, Calendar, Flame, Target, TrendingUp, CheckCircle2, Edit2, Trash2, Clock } from 'lucide-react'
+import { Habit, HabitRecord } from '@/types'
 import { calculateStreak, formatDate } from '@/lib/utils'
 
 interface HabitsViewProps {
@@ -15,10 +18,20 @@ interface HabitsViewProps {
   onHabitEdit: (habit: Habit) => void
   onHabitDelete: (habitId: string) => void
   onAddHabit: () => void
+  isLoading?: boolean
 }
 
-export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, onAddHabit }: HabitsViewProps) {
+export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, onAddHabit, isLoading = false }: HabitsViewProps) {
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [logHabitModal, setLogHabitModal] = useState<{
+    isOpen: boolean
+    habit: Habit | null
+    initialDate?: Date
+  }>({
+    isOpen: false,
+    habit: null
+  })
 
   const filteredHabits = habits.filter(habit => {
     switch (filter) {
@@ -90,37 +103,47 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
     )
   }
 
-  const logHabitToday = (habit: Habit, value: number) => {
-    const today = new Date()
-    const todayRecord = getTodayRecord(habit)
-    
-    if (todayRecord) {
+  const handleLogHabit = (habit: Habit, initialDate?: Date) => {
+    setLogHabitModal({
+      isOpen: true,
+      habit,
+      initialDate
+    })
+  }
+
+  const handleLogHabitSuccess = (updatedRecord: HabitRecord) => {
+    const habit = logHabitModal.habit
+    if (!habit) return
+
+    // Update the habit with the new/updated record
+    const existingRecordIndex = habit.records.findIndex(
+      record => formatDate(record.date, 'yyyy-MM-dd') === formatDate(updatedRecord.date, 'yyyy-MM-dd')
+    )
+
+    let updatedRecords: HabitRecord[]
+    if (existingRecordIndex >= 0) {
       // Update existing record
-      const updatedRecords = habit.records.map(record =>
-        record.id === todayRecord.id
-          ? { ...record, value, isCompleted: value >= habit.target }
-          : record
+      updatedRecords = habit.records.map((record, index) =>
+        index === existingRecordIndex ? updatedRecord : record
       )
-      
-      onHabitUpdate({
-        ...habit,
-        records: updatedRecords
-      })
     } else {
-      // Create new record
-      const newRecord = {
-        id: `${habit.id}-${Date.now()}`,
-        habitId: habit.id,
-        date: today,
-        value,
-        isCompleted: value >= habit.target
-      }
-      
-      onHabitUpdate({
-        ...habit,
-        records: [...habit.records, newRecord]
-      })
+      // Add new record
+      updatedRecords = [...habit.records, updatedRecord]
     }
+
+    const updatedHabit: Habit = {
+      ...habit,
+      records: updatedRecords
+    }
+
+    onHabitUpdate(updatedHabit)
+  }
+
+  const closeLogHabitModal = () => {
+    setLogHabitModal({
+      isOpen: false,
+      habit: null
+    })
   }
 
   return (
@@ -156,12 +179,13 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
       </div>
 
       {/* Habits Grid */}
-      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      <LoadingOverlay isLoading={isLoading}>
+        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {filteredHabits.map((habit) => {
           const streak = getHabitStreak(habit)
           const completionRate = getCompletionRate(habit)
           const todayRecord = getTodayRecord(habit)
-          const todayProgress = todayRecord ? (todayRecord.value / habit.target) * 100 : 0
+          const todayProgress = todayRecord?.isCompleted ? 100 : 0
           
           return (
             <Card key={habit.id} className={!habit.isActive ? 'opacity-60' : ''}>
@@ -189,9 +213,9 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
                 {/* Today's Progress */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Today's Progress</span>
+                    <span className="text-sm font-medium">Today's Status</span>
                     <span className="text-sm text-muted-foreground">
-                      {todayRecord?.value || 0} / {habit.target} {habit.unit}
+                      {todayRecord?.isCompleted ? 'Completed' : 'Pending'}
                     </span>
                   </div>
                   <Progress value={todayProgress} style={{ color: habit.color }} />
@@ -227,36 +251,33 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
                 {/* Quick Log */}
                 {habit.isActive && (
                   <div className="space-y-2">
-                    <span className="text-sm font-medium">Quick Log</span>
-                    <div className="flex space-x-1">
-                      {[25, 50, 75, 100].map(percentage => {
-                        const value = Math.round((percentage / 100) * habit.target)
-                        const isSelected = todayRecord?.value === value
-                        
-                        return (
-                          <Button
-                            key={percentage}
-                            size="sm"
-                            variant={isSelected ? "default" : "outline"}
-                            className="flex-1 text-xs px-1"
-                            onClick={() => logHabitToday(habit, value)}
-                          >
-                            <span className="hidden sm:inline">{value} {habit.unit}</span>
-                            <span className="sm:hidden">{value}</span>
-                          </Button>
-                        )
-                      })}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Quick Action</span>
+                      {todayRecord && (
+                        <Badge variant={todayRecord.isCompleted ? "default" : "secondary"}>
+                          {todayRecord.isCompleted ? 'Completed' : 'Pending'}
+                        </Badge>
+                      )}
                     </div>
+                    
+                    <Button
+                      size="sm"
+                      onClick={() => handleLogHabit(habit)}
+                      className="w-full flex items-center space-x-1"
+                      variant={todayRecord?.isCompleted ? "outline" : "default"}
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>{todayRecord?.isCompleted ? 'Mark Incomplete' : 'Mark Complete'}</span>
+                    </Button>
                   </div>
                 )}
 
                 {/* Frequency */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <div className="flex items-center justify-center text-sm text-muted-foreground">
                   <div className="flex items-center space-x-1">
                     <Calendar className="h-3 w-3" />
-                    <span>Target: {habit.frequency}</span>
+                    <span>Frequency: {habit.frequency}</span>
                   </div>
-                  <span>{habit.target} {habit.unit}</span>
                 </div>
 
                 {/* Action Buttons */}
@@ -275,10 +296,21 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
                     size="sm" 
                     variant="outline"
                     onClick={() => {
-                      if (confirm('Are you sure you want to delete this habit? This will also delete all progress records.')) {
-                        onHabitDelete(habit.id)
-                      }
+                      // Open modal for yesterday or custom date
+                      const yesterday = new Date()
+                      yesterday.setDate(yesterday.getDate() - 1)
+                      handleLogHabit(habit, yesterday)
                     }}
+                    title="Log for past dates"
+                  >
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Past
+                  </Button>
+                  
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(habit.id)}
                   >
                     <Trash2 className="h-3 w-3 text-red-500" />
                   </Button>
@@ -287,7 +319,8 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
             </Card>
           )
         })}
-      </div>
+        </div>
+      </LoadingOverlay>
 
       {filteredHabits.length === 0 && (
         <Card>
@@ -306,6 +339,31 @@ export function HabitsView({ habits, onHabitUpdate, onHabitEdit, onHabitDelete, 
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        onConfirm={() => {
+          if (showDeleteConfirm) {
+            onHabitDelete(showDeleteConfirm)
+          }
+        }}
+        title="Delete Habit"
+        description="Are you sure you want to delete this habit? This action cannot be undone and will also delete all progress records."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+      />
+
+      {/* Log Habit Modal */}
+      <LogHabitModal
+        isOpen={logHabitModal.isOpen}
+        onClose={closeLogHabitModal}
+        habit={logHabitModal.habit}
+        onSuccess={handleLogHabitSuccess}
+        initialDate={logHabitModal.initialDate}
+      />
     </div>
   )
 }

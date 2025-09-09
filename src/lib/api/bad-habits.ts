@@ -14,9 +14,7 @@ export async function createBadHabit(habitData: Omit<BadHabit, 'id' | 'createdAt
       .insert({
         user_id: userId,
         name: habitData.name,
-        description: habitData.description,
-        unit: habitData.unit,
-        target_reduction: habitData.targetReduction
+        description: habitData.description
       })
       .select()
       .single()
@@ -29,8 +27,6 @@ export async function createBadHabit(habitData: Omit<BadHabit, 'id' | 'createdAt
       id: data.id,
       name: data.name,
       description: data.description,
-      unit: data.unit,
-      targetReduction: data.target_reduction,
       records: [],
       createdAt: new Date(data.created_at)
     }
@@ -52,8 +48,6 @@ export async function updateBadHabit(id: string, updates: Partial<BadHabit>): Pr
     const updateData: any = {}
     if (updates.name !== undefined) updateData.name = updates.name
     if (updates.description !== undefined) updateData.description = updates.description
-    if (updates.unit !== undefined) updateData.unit = updates.unit
-    if (updates.targetReduction !== undefined) updateData.target_reduction = updates.targetReduction
 
     const { data, error } = await supabase
       .from('bad_habits')
@@ -124,14 +118,12 @@ export async function getUserBadHabits(): Promise<{ data: BadHabit[]; error: str
       id: habit.id,
       name: habit.name,
       description: habit.description,
-      unit: habit.unit,
-      targetReduction: habit.target_reduction,
       createdAt: new Date(habit.created_at),
       records: habit.bad_habit_records.map((record: any) => ({
         id: record.id,
         habitId: record.habit_id,
         date: new Date(record.date),
-        count: record.count,
+        isOccurred: record.is_occurred,
         notes: record.notes
       }))
     }))
@@ -162,13 +154,21 @@ export async function logBadHabitOccurrence(habitId: string, recordData: Omit<Ba
       return { data: null, error: 'Bad habit not found or access denied' }
     }
 
+    // Format date as local date string (YYYY-MM-DD) without timezone conversion
+    const year = recordData.date.getFullYear()
+    const month = String(recordData.date.getMonth() + 1).padStart(2, '0')
+    const day = String(recordData.date.getDate()).padStart(2, '0')
+    const localDateString = `${year}-${month}-${day}`
+
     const { data, error } = await supabase
       .from('bad_habit_records')
       .upsert({
         habit_id: habitId,
-        date: recordData.date.toISOString().split('T')[0], // Store as date only
-        count: recordData.count,
+        date: localDateString, // Store as local date only (no timezone conversion)
+        is_occurred: recordData.isOccurred,
         notes: recordData.notes
+      }, {
+        onConflict: 'habit_id,date'
       })
       .select()
       .single()
@@ -181,7 +181,7 @@ export async function logBadHabitOccurrence(habitId: string, recordData: Omit<Ba
       id: data.id,
       habitId: data.habit_id,
       date: new Date(data.date),
-      count: data.count,
+      isOccurred: data.is_occurred,
       notes: data.notes
     }
 
@@ -218,11 +218,19 @@ export async function getBadHabitRecords(habitId: string, startDate?: Date, endD
       .order('date', { ascending: false })
 
     if (startDate) {
-      query = query.gte('date', startDate.toISOString().split('T')[0])
+      const startYear = startDate.getFullYear()
+      const startMonth = String(startDate.getMonth() + 1).padStart(2, '0')
+      const startDay = String(startDate.getDate()).padStart(2, '0')
+      const startDateString = `${startYear}-${startMonth}-${startDay}`
+      query = query.gte('date', startDateString)
     }
 
     if (endDate) {
-      query = query.lte('date', endDate.toISOString().split('T')[0])
+      const endYear = endDate.getFullYear()
+      const endMonth = String(endDate.getMonth() + 1).padStart(2, '0')
+      const endDay = String(endDate.getDate()).padStart(2, '0')
+      const endDateString = `${endYear}-${endMonth}-${endDay}`
+      query = query.lte('date', endDateString)
     }
 
     const { data: records, error } = await query
@@ -235,7 +243,7 @@ export async function getBadHabitRecords(habitId: string, startDate?: Date, endD
       id: record.id,
       habitId: record.habit_id,
       date: new Date(record.date),
-      count: record.count,
+      isOccurred: record.is_occurred || record.count > 0, // Handle both old and new schema
       notes: record.notes
     }))
 
@@ -254,8 +262,13 @@ export async function updateBadHabitRecord(id: string, updates: Partial<BadHabit
     }
 
     const updateData: any = {}
-    if (updates.date !== undefined) updateData.date = updates.date.toISOString().split('T')[0]
-    if (updates.count !== undefined) updateData.count = updates.count
+    if (updates.date !== undefined) {
+      const year = updates.date.getFullYear()
+      const month = String(updates.date.getMonth() + 1).padStart(2, '0')
+      const day = String(updates.date.getDate()).padStart(2, '0')
+      updateData.date = `${year}-${month}-${day}`
+    }
+    if (updates.isOccurred !== undefined) updateData.is_occurred = updates.isOccurred
     if (updates.notes !== undefined) updateData.notes = updates.notes
 
     const { data, error } = await supabase
@@ -273,7 +286,7 @@ export async function updateBadHabitRecord(id: string, updates: Partial<BadHabit
       id: data.id,
       habitId: data.habit_id,
       date: new Date(data.date),
-      count: data.count,
+      isOccurred: data.is_occurred,
       notes: data.notes
     }
 
@@ -324,14 +337,12 @@ async function getBadHabitWithRecords(habitId: string): Promise<BadHabit | null>
       id: habit.id,
       name: habit.name,
       description: habit.description,
-      unit: habit.unit,
-      targetReduction: habit.target_reduction,
       createdAt: new Date(habit.created_at),
       records: habit.bad_habit_records.map((record: any) => ({
         id: record.id,
         habitId: record.habit_id,
         date: new Date(record.date),
-        count: record.count,
+        isOccurred: record.is_occurred,
         notes: record.notes
       }))
     }

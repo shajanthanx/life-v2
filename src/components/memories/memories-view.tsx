@@ -10,7 +10,7 @@ import { Memory } from '@/types'
 import { formatDate } from '@/lib/utils'
 import { Heart, Camera, MapPin, Plus, Calendar, Tag } from 'lucide-react'
 import { uploadMemoryImage } from '@/lib/image-utils'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface MemoriesViewProps {
   memories: Memory[]

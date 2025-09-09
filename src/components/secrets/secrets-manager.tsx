@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Secret } from '@/types'
 import { Shield, Eye, EyeOff, Plus, Lock, Copy, Key, CreditCard, Building, Smartphone } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface SecretsManagerProps {
   secrets: Secret[]

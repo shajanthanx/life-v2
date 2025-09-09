@@ -5,6 +5,10 @@ import { LoginForm } from './auth/login-form'
 import { MainLayout } from './layout/main-layout'
 import { DashboardView } from './dashboard/dashboard-view'
 import { ProductivityView } from './productivity/productivity-view'
+import { GoalsPage } from './goals/goals-page'
+import { TasksPage } from './tasks/tasks-page'
+import { HabitsPage } from './habits/habits-page'
+import { NotesPage } from './notes/notes-page'
 import { HealthView } from './health/health-view'
 import { FinanceView } from './finance/finance-view'
 import { LifestyleView } from './lifestyle/lifestyle-view'
@@ -22,7 +26,8 @@ import { MemoriesView } from './memories/memories-view'
 import { BadHabitsView } from './bad-habits/bad-habits-view'
 import { SecretsManager } from './secrets/secrets-manager'
 import { FreelancingView } from './freelancing/freelancing-view'
-import { ToastProvider, useToast } from './ui/use-toast'
+import { ToastProvider, useToast } from '@/hooks/use-toast'
+import { SettingsProvider } from '@/contexts/settings-context'
 import { AddTaskModal } from './modals/add-task-modal'
 import { EditTaskModal } from './modals/edit-task-modal'
 import { EditHabitModal } from './modals/edit-habit-modal'
@@ -63,6 +68,14 @@ const getTabTitle = (tab: string) => {
   switch (tab) {
     case 'dashboard':
       return 'Home'
+    case 'goals':
+      return 'Goals'
+    case 'tasks':
+      return 'Tasks'
+    case 'habits':
+      return 'Habits'
+    case 'notes':
+      return 'Quick Notes'
     case 'productivity':
       return 'Goals & Productivity'
     case 'health':
@@ -98,6 +111,14 @@ const getTabSubtitle = (tab: string) => {
   switch (tab) {
     case 'dashboard':
       return 'Your personal life overview'
+    case 'goals':
+      return 'Track your progress towards achieving your dreams'
+    case 'tasks':
+      return 'Manage your daily tasks and to-dos'
+    case 'habits':
+      return 'Build positive habits for a better life'
+    case 'notes':
+      return 'Capture quick thoughts and set reminders'
     case 'productivity':
       return 'Goals, tasks, and habit management'
     case 'health':
@@ -464,6 +485,38 @@ function AppContent() {
             />
           </div>
         )
+      case 'goals':
+        return (
+          <GoalsPage 
+            data={appData}
+            onDataUpdate={handleDataUpdate}
+            onAddGoal={() => setShowAddGoalModal(true)}
+            onGoalEdit={handleGoalEdit}
+            onGoalDelete={handleGoalDelete}
+          />
+        )
+      case 'tasks':
+        return (
+          <TasksPage 
+            data={appData}
+            onDataUpdate={handleDataUpdate}
+            onAddTask={() => setShowAddTaskModal(true)}
+            onTaskEdit={handleTaskEdit}
+            onTaskDelete={handleTaskDelete}
+          />
+        )
+      case 'habits':
+        return (
+          <HabitsPage 
+            data={appData}
+            onDataUpdate={handleDataUpdate}
+            onAddHabit={() => setShowAddHabitModal(true)}
+            onHabitEdit={handleHabitEdit}
+            onHabitDelete={handleHabitDelete}
+          />
+        )
+      case 'notes':
+        return <NotesPage />
       case 'productivity':
         return (
           <ProductivityView 
@@ -1190,7 +1243,9 @@ function AppContent() {
 export function App() {
   return (
     <ToastProvider>
-      <AppContent />
+      <SettingsProvider>
+        <AppContent />
+      </SettingsProvider>
     </ToastProvider>
   )
 }

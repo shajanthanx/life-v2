@@ -20,8 +20,6 @@ export function EditHabitModal({ isOpen, onClose, onSubmit, habit }: EditHabitMo
     description: '',
     category: 'health' as Habit['category'],
     frequency: 'daily' as Habit['frequency'],
-    target: '',
-    unit: '',
     color: '#3b82f6',
     isActive: true
   })
@@ -34,8 +32,6 @@ export function EditHabitModal({ isOpen, onClose, onSubmit, habit }: EditHabitMo
         description: habit.description || '',
         category: habit.category,
         frequency: habit.frequency,
-        target: habit.target?.toString() || '1',
-        unit: habit.unit || '',
         color: habit.color || '#3b82f6',
         isActive: habit.isActive
       })
@@ -53,8 +49,6 @@ export function EditHabitModal({ isOpen, onClose, onSubmit, habit }: EditHabitMo
       description: formData.description || undefined,
       category: formData.category,
       frequency: formData.frequency,
-      target: Number(formData.target) || 1,
-      unit: formData.unit || undefined,
       color: formData.color,
       isActive: formData.isActive
     }
@@ -71,8 +65,6 @@ export function EditHabitModal({ isOpen, onClose, onSubmit, habit }: EditHabitMo
       description: '',
       category: 'health',
       frequency: 'daily',
-      target: '1',
-      unit: '',
       color: '#3b82f6',
       isActive: true
     })
@@ -138,29 +130,6 @@ export function EditHabitModal({ isOpen, onClose, onSubmit, habit }: EditHabitMo
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
               </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium">Target</label>
-              <Input
-                type="number"
-                value={formData.target}
-                onChange={(e) => setFormData(prev => ({ ...prev, target: e.target.value }))}
-                placeholder="1"
-                min="1"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium">Unit</label>
-              <Input
-                value={formData.unit}
-                onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))}
-                placeholder="times, minutes, pages"
-              />
             </div>
           </div>
 
