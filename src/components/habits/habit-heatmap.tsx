@@ -32,14 +32,9 @@ export function HabitHeatmap({ habit, year = new Date().getFullYear() }: HabitHe
     })
   }, [habit, year])
 
-  const getIntensityClass = (completionRate: number, hasRecord: boolean) => {
+  const getIntensityClass = (isCompleted: boolean, hasRecord: boolean) => {
     if (!hasRecord) return 'bg-muted/30'
-    if (completionRate === 0) return 'bg-red-200'
-    if (completionRate < 25) return 'bg-red-300'
-    if (completionRate < 50) return 'bg-orange-300'
-    if (completionRate < 75) return 'bg-yellow-300'
-    if (completionRate < 100) return 'bg-green-300'
-    return 'bg-green-500'
+    return isCompleted ? 'bg-green-500' : 'bg-muted/50'
   }
 
   const monthNames = [
@@ -127,72 +122,109 @@ export function HabitHeatmap({ habit, year = new Date().getFullYear() }: HabitHe
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Less</span>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-sm bg-muted/30" title="No data" />
-            <div className="w-3 h-3 rounded-sm bg-red-200" title="0%" />
-            <div className="w-3 h-3 rounded-sm bg-orange-300" title="1-49%" />
-            <div className="w-3 h-3 rounded-sm bg-yellow-300" title="50-74%" />
-            <div className="w-3 h-3 rounded-sm bg-green-300" title="75-99%" />
-            <div className="w-3 h-3 rounded-sm bg-green-500" title="100%" />
+        <div className="flex items-center justify-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-sm bg-muted/30" />
+            <span className="text-muted-foreground">No data</span>
           </div>
-          <span className="text-muted-foreground">More</span>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-sm bg-muted/50" />
+            <span className="text-muted-foreground">Not completed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-sm bg-green-500" />
+            <span className="text-muted-foreground">Completed</span>
+          </div>
         </div>
 
-        {/* Heatmap Grid */}
-        <div className="overflow-x-auto">
-          <div className="inline-block min-w-full">
-            {/* Month labels */}
-            <div className="flex mb-2">
-              <div className="w-8" /> {/* Spacer for weekday labels */}
-              {monthNames.map((month, index) => (
-                <div key={month} className="flex-1 text-xs text-center text-muted-foreground min-w-[40px]">
-                  {month}
+        {/* GitHub-style Heatmap */}
+        <div className="space-y-3 overflow-x-auto">
+          {/* Month labels */}
+          <div className="flex text-xs text-muted-foreground min-w-max">
+            <div className="w-10 flex-shrink-0"></div> {/* Space for weekday labels */}
+            <div className="flex" style={{ minWidth: '636px' }}>
+              {Array.from({ length: 53 }, (_, weekIndex) => {
+                // Calculate first day of this week
+                const startOfYear = new Date(year, 0, 1)
+                const startOfFirstWeek = new Date(startOfYear)
+                startOfFirstWeek.setDate(startOfYear.getDate() - startOfYear.getDay())
+                
+                const weekStart = new Date(startOfFirstWeek)
+                weekStart.setDate(startOfFirstWeek.getDate() + (weekIndex * 7))
+                
+                // Show month label on first week of each month
+                const shouldShowMonth = weekStart.getDate() <= 7 || weekIndex === 0
+                const monthName = shouldShowMonth ? monthNames[weekStart.getMonth()] : ''
+                
+                return (
+                  <div key={weekIndex} className="w-3 text-center" style={{ marginRight: '1px' }}>
+                    <span style={{ fontSize: '10px' }}>{monthName}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Main heatmap grid */}
+          <div className="flex min-w-max">
+            {/* Weekday labels */}
+            <div className="w-10 flex-shrink-0 pr-2 text-xs text-muted-foreground">
+              {weekdays.map((day, index) => (
+                <div key={day} className="h-3 mb-1 flex items-center justify-end">
+                  <span style={{ fontSize: '9px' }}>
+                    {index % 2 === 1 ? day.substring(0, 1) : ''}
+                  </span>
                 </div>
               ))}
             </div>
-            
-            {/* Weekday labels and grid */}
-            <div className="flex">
-              {/* Weekday labels */}
-              <div className="w-8 space-y-1">
-                {weekdays.map((day, index) => (
-                  <div key={day} className="h-3 text-xs text-muted-foreground flex items-center">
-                    {index % 2 === 1 && day.substring(0, 1)}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Grid */}
-              <div className="flex-1 space-y-1">
-                {[0, 1, 2, 3, 4, 5, 6].map(dayOfWeek => (
-                  <div key={dayOfWeek} className="flex gap-1">
-                    {weeks.map((week, weekIndex) => {
-                      const day = week.find(d => d.date.getDay() === dayOfWeek)
-                      if (!day) {
-                        return <div key={weekIndex} className="w-3 h-3 bg-muted/30 rounded-sm" />
-                      }
-                      
-                      return (
-                        <div
-                          key={`${weekIndex}-${dayOfWeek}`}
-                          className={`w-3 h-3 rounded-sm cursor-pointer transition-all hover:scale-110 ${
-                            getIntensityClass(day.completionRate, day.hasRecord)
-                          }`}
-                          title={`${formatDate(day.date, 'MMM dd, yyyy')}${
-                            day.hasRecord 
-                              ? `\n${day.isCompleted ? 'Completed ✓' : 'Not completed'}${
-                                  day.notes ? `\nNote: ${day.notes}` : ''
-                                }`
-                              : '\nNo data'
-                          }`}
-                        />
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
+
+            {/* Contribution squares grid */}
+            <div className="flex" style={{ gap: '1px' }}>
+              {/* Generate 53 weeks */}
+              {Array.from({ length: 53 }, (_, weekIndex) => (
+                <div key={weekIndex} className="flex flex-col" style={{ gap: '1px' }}>
+                  {/* 7 days per week */}
+                  {Array.from({ length: 7 }, (_, dayIndex) => {
+                    // Calculate the actual date for this square
+                    const startOfYear = new Date(year, 0, 1)
+                    const startOfFirstWeek = new Date(startOfYear)
+                    startOfFirstWeek.setDate(startOfYear.getDate() - startOfYear.getDay()) // Go to Sunday of first week
+                    
+                    const currentDate = new Date(startOfFirstWeek)
+                    currentDate.setDate(startOfFirstWeek.getDate() + (weekIndex * 7) + dayIndex)
+                    
+                    // Find the corresponding data point
+                    const dayData = heatmapData.find(d => 
+                      d.date.getFullYear() === currentDate.getFullYear() &&
+                      d.date.getMonth() === currentDate.getMonth() &&
+                      d.date.getDate() === currentDate.getDate()
+                    )
+
+                    // Don't show squares for dates outside the current year
+                    if (currentDate.getFullYear() !== year) {
+                      return <div key={dayIndex} className="w-3 h-3 bg-transparent" />
+                    }
+
+                    return (
+                      <div
+                        key={dayIndex}
+                        className={`w-3 h-3 rounded-sm cursor-pointer transition-all hover:ring-1 hover:ring-blue-400 ${
+                          dayData 
+                            ? getIntensityClass(dayData.isCompleted, dayData.hasRecord)
+                            : 'bg-muted/20'
+                        }`}
+                        title={`${formatDate(currentDate, 'MMM dd, yyyy')}${
+                          dayData?.hasRecord 
+                            ? `\n${dayData.isCompleted ? 'Completed ✓' : 'Not completed'}${
+                                dayData.notes ? `\nNote: ${dayData.notes}` : ''
+                              }`
+                            : '\nNo data'
+                        }`}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
             </div>
           </div>
         </div>

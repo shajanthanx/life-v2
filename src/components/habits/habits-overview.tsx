@@ -93,21 +93,28 @@ export function HabitsOverview({ habits, onHabitUpdate, onAddHabit }: HabitsOver
     return { habits: stats, overall: overallCompletionRate }
   }, [activeHabits, weekStart, weekEnd])
 
-  // Current streaks
+  // Current streaks using consistent logic
   const currentStreaks = useMemo(() => {
     return activeHabits.map(habit => {
       let streak = 0
-      let currentDate = new Date(today)
       
-      // Count consecutive days from today backwards
-      while (currentDate >= new Date(habit.createdAt)) {
-        const record = habit.records.find(r => 
-          isSameDay(r.date, currentDate) && r.isCompleted
-        )
+      // Sort records by date descending (most recent first)
+      const sortedRecords = habit.records
+        .filter(r => r.isCompleted && r.date <= today)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+      // Count consecutive days from the most recent
+      for (const record of sortedRecords) {
+        const recordDate = new Date(record.date)
+        const expectedDate = new Date(today)
+        expectedDate.setDate(today.getDate() - streak)
         
-        if (record) {
+        // Normalize to compare just dates (ignore time)
+        recordDate.setHours(0, 0, 0, 0)
+        expectedDate.setHours(0, 0, 0, 0)
+        
+        if (recordDate.getTime() === expectedDate.getTime()) {
           streak++
-          currentDate = addDays(currentDate, -1)
         } else {
           break
         }
@@ -466,16 +473,16 @@ export function HabitsOverview({ habits, onHabitUpdate, onAddHabit }: HabitsOver
               {currentStreaks.slice(0, 6).map(({ habit, streak }) => (
                 <div 
                   key={habit.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950"
+                  className="flex items-center gap-3 p-3 rounded-lg border bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950 border-purple-200 dark:border-purple-800"
                 >
                   <span className="text-2xl">{getStreakIcon(streak)}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{habit.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-sm text-purple-800 dark:text-purple-200">{habit.name}</p>
+                    <p className="text-sm text-purple-600 dark:text-purple-400">
                       {streak} day{streak !== 1 ? 's' : ''} streak
                     </p>
                   </div>
-                  <Badge variant="outline" className="bg-white dark:bg-gray-800">
+                  <Badge variant="outline" className="bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-700 text-purple-800 dark:text-purple-200">
                     {streak}
                   </Badge>
                 </div>
@@ -485,33 +492,6 @@ export function HabitsOverview({ habits, onHabitUpdate, onAddHabit }: HabitsOver
         </Card>
       )}
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={onAddHabit} variant="outline" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add New Habit
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="gap-2"
-              onClick={handleCompleteAll}
-              disabled={todaysStatus.pending.length === 0 || isLogging !== null}
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Complete All ({todaysStatus.pending.length})
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

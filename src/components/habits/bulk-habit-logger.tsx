@@ -272,7 +272,7 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
         </div>
         
         {/* Date Navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-4">
           <Button
             size="sm"
             variant="outline"
@@ -349,9 +349,6 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
                       </th>
                     )
                   })}
-                  <th className="text-center p-2 border-b">
-                    <div className="text-xs font-medium">Actions</div>
-                  </th>
                 </tr>
               </thead>
               
@@ -393,7 +390,7 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
                                   checked={completed}
                                   disabled={isFutureDate}
                                   onCheckedChange={() => handleToggle(habit, date, completed)}
-                                  className="h-4 w-4"
+                                  className="h-4 w-4 rounded-full border-blue-300 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
                                 />
                               )}
                               
@@ -402,25 +399,6 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
                           </td>
                         )
                       })}
-                      
-                      <td className="p-2 border-b text-center">
-                        <div className="flex flex-col items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 text-xs px-2"
-                            onClick={() => bulkCompleteHabit(habit)}
-                            title={`Complete ${habit.name} for all visible dates`}
-                          >
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            All
-                          </Button>
-                          
-                          <div className="text-xs text-muted-foreground">
-                            {completedDates}/{dates.length}
-                          </div>
-                        </div>
-                      </td>
                     </tr>
                   )
                 })}

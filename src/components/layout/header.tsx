@@ -53,11 +53,11 @@ export function Header({ title, subtitle, onMenuClick, onSearchClick, onNotifica
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="relative" onClick={onNotificationClick}>
             <Bell className="h-5 w-5" />
-            {/* {notificationCount && notificationCount > 0 && (
+            {notificationCount && notificationCount > 0 && (
               <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive rounded-full text-xs text-white flex items-center justify-center">
                 {notificationCount > 9 ? '9+' : notificationCount}
               </span>
-            )} */}
+            )}
           </Button>
         </div>
       </div>
