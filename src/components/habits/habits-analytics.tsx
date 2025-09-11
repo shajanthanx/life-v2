@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { Habit, HabitRecord } from '@/types'
 import { formatDate } from '@/lib/utils'
-import { HabitHeatmap } from './habit-heatmap'
+import { AggregatedHabitHeatmap } from './aggregated-habit-heatmap'
 
 interface HabitsAnalyticsProps {
   habits: Habit[]
@@ -424,7 +424,12 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
               <CardTitle>Annual Progress</CardTitle>
             </CardHeader>
             <CardContent>
-              <HabitHeatmap habit={selectedHabit} year={new Date().getFullYear()} />
+              <AggregatedHabitHeatmap 
+                habits={[selectedHabit]}
+                selectedHabits={[selectedHabit.id]}
+                year={new Date().getFullYear()}
+                onSelectAllHabits={() => {}}
+              />
             </CardContent>
           </Card>
 
@@ -1027,34 +1032,12 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
 
         {/* Heatmaps Tab */}
         <TabsContent value="heatmaps" className="space-y-6">
-          {selectedHabits.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Filter className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Habits Selected</h3>
-                <p className="text-muted-foreground text-center mb-4">
-                  Please select at least one habit from the filter above to view heatmaps.
-                </p>
-                <Button onClick={selectAllHabits} className="gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Select All Habits
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-          <>
-          <div className="space-y-6">
-            {(selectedHabits.length > 0 
-              ? habits.filter(habit => selectedHabits.includes(habit.id))
-              : habits
-            ).map(habit => (
-              <div key={habit.id}>
-                <HabitHeatmap habit={habit} year={new Date().getFullYear()} />
-              </div>
-            ))}
-          </div>
-          </>
-          )}
+          <AggregatedHabitHeatmap 
+            habits={habits}
+            selectedHabits={selectedHabits}
+            year={new Date().getFullYear()}
+            onSelectAllHabits={selectAllHabits}
+          />
         </TabsContent>
 
       </Tabs>

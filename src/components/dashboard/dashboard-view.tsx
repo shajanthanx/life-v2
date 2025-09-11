@@ -1,8 +1,10 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import { OverviewCards } from './overview-cards'
 import { QuickActions } from './quick-actions'
 import { RecentActivity } from './recent-activity'
+import { AggregatedHabitHeatmap } from '../habits/aggregated-habit-heatmap'
 import { AppState } from '@/types'
 import { formatDate, calculateStreak } from '@/lib/utils'
 
@@ -12,6 +14,16 @@ interface DashboardViewProps {
 }
 
 export function DashboardView({ data, onQuickAction }: DashboardViewProps) {
+  // State for heatmap
+  const [selectedHabits, setSelectedHabits] = useState<string[]>([])
+  
+  // Initialize selected habits to all habits
+  useMemo(() => {
+    if (data.habits.length > 0 && selectedHabits.length === 0) {
+      setSelectedHabits(data.habits.map(h => h.id))
+    }
+  }, [data.habits, selectedHabits.length])
+
   // Calculate dashboard metrics
   const today = new Date()
   const todayTasks = data.tasks.filter(task => {
@@ -145,6 +157,16 @@ export function DashboardView({ data, onQuickAction }: DashboardViewProps) {
         totalBudget={totalBudget}
         savingsProgress={savingsProgress}
       />
+
+      {/* Habits Heatmap */}
+      {data.habits.length > 0 && (
+        <AggregatedHabitHeatmap 
+          habits={data.habits}
+          selectedHabits={selectedHabits}
+          year={new Date().getFullYear()}
+          onSelectAllHabits={() => setSelectedHabits(data.habits.map(h => h.id))}
+        />
+      )}
 
       {/* Quick Actions & Recent Activity */}
       <div className="grid gap-6 lg:grid-cols-2">
