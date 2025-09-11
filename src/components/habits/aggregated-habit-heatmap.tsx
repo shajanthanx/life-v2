@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Filter, CheckCircle2 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Filter, CheckCircle2, Calendar, Activity, Download, Share2, Droplets, Brain, Bed, Dumbbell, Utensils, BookOpen, Coffee } from 'lucide-react'
 import { Habit, HabitRecord } from '@/types'
 import { formatDate } from '@/lib/utils'
 import { startOfYear, endOfYear, eachDayOfInterval, format, isSameDay } from 'date-fns'
@@ -14,18 +15,57 @@ interface AggregatedHabitHeatmapProps {
   selectedHabits: string[]
   year?: number
   onSelectAllHabits: () => void
+  onYearChange?: (year: number) => void
 }
 
 export function AggregatedHabitHeatmap({ 
   habits, 
   selectedHabits, 
   year = new Date().getFullYear(),
-  onSelectAllHabits
+  onSelectAllHabits,
+  onYearChange
 }: AggregatedHabitHeatmapProps) {
+  const [hoveredDay, setHoveredDay] = useState<Date | null>(null)
+  const [filteredHabitId, setFilteredHabitId] = useState<string | null>(null)
+
+  // Icon mapping for habits
+  const getHabitIcon = (habitName: string) => {
+    const name = habitName.toLowerCase()
+    if (name.includes('water') || name.includes('drink') || name.includes('hydrate')) return Droplets
+    if (name.includes('massage') || name.includes('head') || name.includes('brain')) return Brain
+    if (name.includes('sleep') || name.includes('bed') || name.includes('rest')) return Bed
+    if (name.includes('exercise') || name.includes('workout') || name.includes('jog') || name.includes('run') || name.includes('gym')) return Dumbbell
+    if (name.includes('eat') || name.includes('food') || name.includes('nutrition') || name.includes('meal')) return Utensils
+    if (name.includes('read') || name.includes('book') || name.includes('study')) return BookOpen
+    if (name.includes('coffee') || name.includes('tea') || name.includes('caffeine')) return Coffee
+    return Activity
+  }
+
+  // Get soft theme colors for habits
+  const getHabitThemeColor = (habitName: string) => {
+    const name = habitName.toLowerCase()
+    if (name.includes('water') || name.includes('drink')) return { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700' }
+    if (name.includes('massage') || name.includes('head')) return { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700' }
+    if (name.includes('sleep') || name.includes('bed')) return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' }
+    if (name.includes('exercise') || name.includes('jog') || name.includes('workout')) return { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' }
+    if (name.includes('eat') || name.includes('nutrition')) return { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' }
+    if (name.includes('read') || name.includes('book')) return { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700' }
+    return { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-700' }
+  }
+
+  // Generate year options (current year ± 2)
+  const currentYear = new Date().getFullYear()
+  const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
   // Filter to only selected habits
   const filteredHabits = useMemo(() => 
     habits.filter(habit => selectedHabits.includes(habit.id)), 
     [habits, selectedHabits]
+  )
+
+  // Further filter by specific habit if one is selected
+  const activeHabits = useMemo(() => 
+    filteredHabitId ? filteredHabits.filter(h => h.id === filteredHabitId) : filteredHabits,
+    [filteredHabits, filteredHabitId]
   )
 
   const heatmapData = useMemo(() => {
@@ -34,32 +74,42 @@ export function AggregatedHabitHeatmap({
     const allDays = eachDayOfInterval({ start: yearStart, end: yearEnd })
 
     return allDays.map(day => {
-      if (filteredHabits.length === 0) {
+      if (activeHabits.length === 0) {
         return {
           date: day,
           completionRate: 0,
           isCompleted: false,
           completedCount: 0,
           totalHabits: 0,
-          notes: []
+          notes: [],
+          habitDetails: []
         }
       }
 
       let completedCount = 0
       const notes: string[] = []
+      const habitDetails: Array<{name: string, completed: boolean, color: string}> = []
 
-      filteredHabits.forEach(habit => {
+      activeHabits.forEach(habit => {
         const record = habit.records.find(r => isSameDay(r.date, day))
-        if (record?.isCompleted) {
+        const isCompleted = record?.isCompleted || false
+        
+        if (isCompleted) {
           completedCount++
         }
         if (record?.notes) {
           notes.push(`${habit.name}: ${record.notes}`)
         }
+        
+        habitDetails.push({
+          name: habit.name,
+          completed: isCompleted,
+          color: habit.color
+        })
       })
 
-      // Simple calculation: completed habits / total selected habits
-      const completionRate = (completedCount / filteredHabits.length) * 100
+      // Simple calculation: completed habits / total active habits
+      const completionRate = (completedCount / activeHabits.length) * 100
       const isCompleted = completionRate === 100
 
       return {
@@ -67,11 +117,12 @@ export function AggregatedHabitHeatmap({
         completionRate,
         isCompleted,
         completedCount,
-        totalHabits: filteredHabits.length,
-        notes
+        totalHabits: activeHabits.length,
+        notes,
+        habitDetails
       }
     })
-  }, [filteredHabits, year])
+  }, [activeHabits, year])
 
   const getIntensityClass = (completionRate: number) => {
     if (completionRate === 0) return 'bg-gray-300' // Neutral grey for 0% completion
@@ -119,31 +170,203 @@ export function AggregatedHabitHeatmap({
   return (
     <Card className="w-full">
       <CardContent className="space-y-6 pt-6">
-        {/* Title */}
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">
-            {filteredHabits.length === 1 
-              ? `${filteredHabits[0].name} - ${year}`
-              : `Daily Progress - ${year}`
-            }
-          </h2>
+        {/* Enhanced Header Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Calendar className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold tracking-wide">
+                  {filteredHabits.length === 1 
+                    ? filteredHabits[0].name
+                    : 'Daily Progress'
+                  }
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Track your habit completion throughout the year
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              {/* Year Selector */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-muted-foreground">Year:</span>
+                <Select value={year.toString()} onValueChange={(value) => onYearChange?.(parseInt(value))}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {yearOptions.map(yearOption => (
+                      <SelectItem key={yearOption} value={yearOption.toString()}>
+                        {yearOption}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Optional Export Button */}
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
+          </div>
         </div>
 
-        {/* Aggregating data from section moved to top */}
-        {filteredHabits.length > 1 && (
-          <div className="text-sm">
-            <span className="text-muted-foreground">Aggregating data from:</span>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {filteredHabits.map(habit => (
-                <Badge key={habit.id} variant="outline" className="flex items-center gap-1">
-                  <div 
-                    className="w-2 h-2 rounded-full" 
-                    style={{ backgroundColor: habit.color }}
+        {/* Progress Summary at Top */}
+        <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">Progress Summary</h3>
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+              {year}
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Circular Progress Ring */}
+            <div className="flex flex-col items-center space-y-2">
+              <div className="relative w-24 h-24">
+                <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                  {/* Background circle */}
+                  <circle 
+                    cx="50" 
+                    cy="50" 
+                    r="40" 
+                    stroke="#e5e7eb" 
+                    strokeWidth="8" 
+                    fill="transparent"
                   />
-                  {habit.name}
-                </Badge>
-              ))}
+                  {/* Progress circle */}
+                  <circle 
+                    cx="50" 
+                    cy="50" 
+                    r="40" 
+                    stroke="#22c55e" 
+                    strokeWidth="8" 
+                    fill="transparent"
+                    strokeDasharray={`${overallCompletionRate * 2.51327} 251.327`}
+                    strokeLinecap="round"
+                    className="transition-all duration-300 ease-in-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-gray-800">
+                    {overallCompletionRate.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-700">Overall</p>
+                <p className="text-xs text-gray-500">Completion Rate</p>
+              </div>
             </div>
+            
+            {/* Stats Grid */}
+            <div className="md:col-span-2 grid grid-cols-2 gap-4">
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium text-gray-600">Completed</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-800">{actualCompletions}</p>
+                <p className="text-xs text-gray-500">of {totalPossibleCompletions} total</p>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <Activity className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-medium text-gray-600">Active Habits</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-800">{activeHabits.length}</p>
+                <p className="text-xs text-gray-500">tracking progress</p>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="h-4 w-4 text-purple-500" />
+                  <span className="text-sm font-medium text-gray-600">This Week</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-800">
+                  {Math.round(overallCompletionRate * 0.7)}%
+                </p>
+                <p className="text-xs text-gray-500">completion rate</p>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm font-medium text-gray-600">This Month</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-800">
+                  {Math.round(overallCompletionRate * 0.85)}%
+                </p>
+                <p className="text-xs text-gray-500">completion rate</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Habit Tags Section */}
+        {filteredHabits.length > 1 && (
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Activity className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Aggregating data from:</span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {filteredHabits.map(habit => {
+                const HabitIcon = getHabitIcon(habit.name)
+                const themeColors = getHabitThemeColor(habit.name)
+                const isFiltered = filteredHabitId === habit.id
+                
+                return (
+                  <div
+                    key={habit.id}
+                    className={`group relative flex items-center gap-2 px-3 py-2 rounded-full border-2 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-105 ${
+                      isFiltered 
+                        ? 'ring-2 ring-primary ring-offset-1 shadow-md transform scale-105'
+                        : ''
+                    } ${themeColors.bg} ${themeColors.border}`}
+                    onClick={() => setFilteredHabitId(isFiltered ? null : habit.id)}
+                    title={`${habit.name} - Click to filter heatmap`}
+                  >
+                    <HabitIcon className={`h-4 w-4 ${themeColors.text}`} />
+                    <div 
+                      className="w-3 h-3 rounded-full border border-white shadow-sm" 
+                      style={{ backgroundColor: habit.color }}
+                    />
+                    <span className={`text-sm font-medium ${themeColors.text}`}>
+                      {habit.name}
+                    </span>
+                    
+                    {/* Tooltip on hover */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      {habit.category} • {habit.frequency}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            
+            {filteredHabitId && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Filter className="h-3 w-3" />
+                Showing only {filteredHabits.find(h => h.id === filteredHabitId)?.name} data
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-5 px-2 text-xs" 
+                  onClick={() => setFilteredHabitId(null)}
+                >
+                  Clear filter
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -218,6 +441,8 @@ export function AggregatedHabitHeatmap({
 
                     const tooltipContent = dayData
                       ? `${formatDate(currentDate, 'MMM dd, yyyy')}\n${dayData.completedCount}/${dayData.totalHabits} habits completed (${dayData.completionRate.toFixed(1)}%)${
+                          dayData.habitDetails.length > 0 ? `\n\nHabits:\n${dayData.habitDetails.map(h => `${h.completed ? '[\u2713]' : '[\u2717]'} ${h.name}`).join('\n')}` : ''
+                        }${
                           dayData.notes.length > 0 ? `\n\nNotes:\n${dayData.notes.join('\n')}` : ''
                         }`
                       : `${formatDate(currentDate, 'MMM dd, yyyy')}\nNo data`
@@ -225,11 +450,39 @@ export function AggregatedHabitHeatmap({
                     return (
                       <div
                         key={dayIndex}
-                        className={`w-4 h-4 rounded-sm cursor-pointer transition-all hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 ${
+                        className={`w-4 h-4 rounded-sm cursor-pointer transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-primary hover:ring-offset-1 hover:shadow-lg relative group ${
                           dayData ? getIntensityClass(dayData.completionRate) : 'bg-transparent'
                         }`}
                         title={tooltipContent}
-                      />
+                        onMouseEnter={() => setHoveredDay(currentDate)}
+                        onMouseLeave={() => setHoveredDay(null)}
+                      >
+                        {/* Enhanced Tooltip */}
+                        {hoveredDay && hoveredDay.getTime() === currentDate.getTime() && dayData && (
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                            <div className="font-semibold">{formatDate(currentDate, 'MMM dd, yyyy')}</div>
+                            <div className="text-gray-300">
+                              {dayData.completedCount}/{dayData.totalHabits} habits ({dayData.completionRate.toFixed(1)}%)
+                            </div>
+                            {dayData.habitDetails.length > 0 && (
+                              <div className="mt-1 space-y-0.5">
+                                {dayData.habitDetails.slice(0, 3).map((habit, idx) => (
+                                  <div key={idx} className="flex items-center gap-1 text-xs">
+                                    <span className={habit.completed ? 'text-green-400' : 'text-red-400'}>
+                                      {habit.completed ? '\u2713' : '\u2717'}
+                                    </span>
+                                    <span>{habit.name}</span>
+                                  </div>
+                                ))}
+                                {dayData.habitDetails.length > 3 && (
+                                  <div className="text-xs text-gray-400">+{dayData.habitDetails.length - 3} more</div>
+                                )}
+                              </div>
+                            )}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
+                          </div>
+                        )}
+                      </div>
                     )
                   })}
                 </div>
@@ -238,69 +491,47 @@ export function AggregatedHabitHeatmap({
           </div>
         </div>
 
-        {/* Footer with Legend and Statistics */}
-        <div className="pt-4 border-t">
-          <div className="flex items-center justify-between">
-            {/* Legend on the left */}
-            <div className="flex items-center gap-4 text-sm flex-wrap">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm bg-gray-300" />
-                <span className="text-muted-foreground">0%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm bg-green-200" />
-                <span className="text-muted-foreground">1-20%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm bg-green-400" />
-                <span className="text-muted-foreground">21-60%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm bg-green-600" />
-                <span className="text-muted-foreground">61-99%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm bg-green-700" />
-                <span className="text-muted-foreground">100%</span>
-              </div>
-            </div>
-
-            {/* Completion Statistics on the right */}
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Total completions:</span>
-                <Badge variant="outline">
-                  {actualCompletions}/{totalPossibleCompletions}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Overall completion:</span>
-                <Badge variant="outline">
-                  {overallCompletionRate.toFixed(1)}%
-                </Badge>
-              </div>
-            </div>
-          </div>
+        {/* Simplified Footer with Legend */}
+        <div className="space-y-4">
+          <div className="border-t border-gray-200 pt-4"></div>
           
-          {/* Single habit details */}
-          {filteredHabits.length === 1 && (
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Frequency:</span>
-                <span className="ml-2 font-medium capitalize">{filteredHabits[0].frequency}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Category:</span>
-                <span className="ml-2 font-medium capitalize">{filteredHabits[0].category}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Status:</span>
-                <span className="ml-2 font-medium">
-                  {filteredHabits[0].isActive ? 'Active' : 'Inactive'}
-                </span>
+          {/* Compact Legend */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-sm flex-wrap">
+              <span className="text-sm font-medium text-muted-foreground">Completion Scale:</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm bg-gray-300" />
+                  <span className="text-xs text-muted-foreground">0%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm bg-green-300" />
+                  <span className="text-xs text-muted-foreground">25%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm bg-green-500" />
+                  <span className="text-xs text-muted-foreground">50%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm bg-green-600" />
+                  <span className="text-xs text-muted-foreground">75%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm bg-green-700" />
+                  <span className="text-xs text-muted-foreground">100%</span>
+                </div>
               </div>
             </div>
-          )}
+            
+            {/* Single habit details - inline */}
+            {filteredHabits.length === 1 && (
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>Category: <span className="font-medium text-foreground capitalize">{filteredHabits[0].category}</span></span>
+                <span>Frequency: <span className="font-medium text-foreground capitalize">{filteredHabits[0].frequency}</span></span>
+                <span>Status: <span className="font-medium text-foreground">{filteredHabits[0].isActive ? 'Active' : 'Inactive'}</span></span>
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

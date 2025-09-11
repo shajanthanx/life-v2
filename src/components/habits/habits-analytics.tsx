@@ -48,6 +48,7 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null)
   const [selectedHabits, setSelectedHabits] = useState<string[]>([])
   const [analyticsTab, setAnalyticsTab] = useState<'overview' | 'trends' | 'heatmaps'>('overview')
+  const [heatmapYear, setHeatmapYear] = useState<number>(new Date().getFullYear())
   
   // Weekly chart navigation state
   const [weeksToShow, setWeeksToShow] = useState<number>(10)
@@ -427,8 +428,9 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
               <AggregatedHabitHeatmap 
                 habits={[selectedHabit]}
                 selectedHabits={[selectedHabit.id]}
-                year={new Date().getFullYear()}
+                year={heatmapYear}
                 onSelectAllHabits={() => {}}
+                onYearChange={setHeatmapYear}
               />
             </CardContent>
           </Card>
@@ -1035,8 +1037,9 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
           <AggregatedHabitHeatmap 
             habits={habits}
             selectedHabits={selectedHabits}
-            year={new Date().getFullYear()}
+            year={heatmapYear}
             onSelectAllHabits={selectAllHabits}
+            onYearChange={setHeatmapYear}
           />
         </TabsContent>
 
