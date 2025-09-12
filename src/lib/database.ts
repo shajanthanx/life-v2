@@ -19,6 +19,8 @@ import { getUserProgressPhotos } from './api/progress-photos'
 import { getUserSecrets } from './api/secrets'
 import { getUserFreelanceProjects, getUserTimeEntries } from './api/freelancing'
 import { getUserNotes } from './api/notes'
+import { getUserCategories } from './api/categories'
+import { getUserPredefinedExpenses } from './api/predefined-expenses'
 
 export class DatabaseService {
   private static instance: DatabaseService
@@ -61,7 +63,9 @@ export class DatabaseService {
         secrets,
         freelanceProjects,
         timeEntries,
-        notes
+        notes,
+        categories,
+        predefinedExpenses
       ] = await Promise.all([
         getUserGoals(),
         getUserTasks(),
@@ -85,7 +89,9 @@ export class DatabaseService {
         getUserSecrets(),
         getUserFreelanceProjects(),
         getUserTimeEntries(),
-        getUserNotes()
+        getUserNotes(),
+        getUserCategories(),
+        getUserPredefinedExpenses()
       ])
 
       return {
@@ -101,6 +107,8 @@ export class DatabaseService {
         budgets: [], // Will be implemented later
         savingsGoals: savingsGoals.data || [],
         investments: [], // Will be implemented later
+        categories: categories.data || [],
+        predefinedExpenses: predefinedExpenses.data || [],
         journalEntries: journalEntriesResult.data || [],
         books: books.data || [],
         movies: movies.data || [],
@@ -143,6 +151,8 @@ export class DatabaseService {
       budgets: [],
       savingsGoals: [],
       investments: [],
+      categories: [],
+      predefinedExpenses: [],
       journalEntries: [],
       books: [],
       movies: [],

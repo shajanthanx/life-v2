@@ -104,11 +104,35 @@ export interface NutritionRecord {
 }
 
 // Finance Types
+export interface Category {
+  id: string
+  name: string
+  type: 'income' | 'expense'
+  isDefault: boolean
+  icon?: string
+  color?: string
+  createdAt: Date
+}
+
+export interface PredefinedExpense {
+  id: string
+  name: string
+  categoryId: string
+  amount: number
+  frequency: 'weekly' | 'monthly' | 'yearly'
+  nextDue?: Date
+  isActive: boolean
+  description?: string
+  autoAdd: boolean
+  createdAt: Date
+}
+
 export interface Transaction {
   id: string
   type: 'income' | 'expense'
   amount: number
-  category: string
+  category?: string // Legacy field - kept for backward compatibility
+  categoryId?: string // New normalized category reference
   description: string
   date: Date
   isRecurring: boolean
@@ -117,7 +141,8 @@ export interface Transaction {
 
 export interface Budget {
   id: string
-  category: string
+  category?: string // Legacy field
+  categoryId?: string // New normalized category reference
   allocated: number
   spent: number
   month: number
@@ -304,10 +329,16 @@ export interface AppState {
   sleepRecords: SleepRecord[]
   exerciseRecords: ExerciseRecord[]
   nutritionRecords: NutritionRecord[]
+  
+  // Finance data
   transactions: Transaction[]
   budgets: Budget[]
   savingsGoals: SavingsGoal[]
   investments: Investment[]
+  categories: Category[]
+  predefinedExpenses: PredefinedExpense[]
+  
+  // Lifestyle data
   journalEntries: JournalEntry[]
   books: Book[]
   movies: Movie[]

@@ -54,8 +54,8 @@ export function TransactionsView({ transactions, onAddTransaction }: Transaction
 
   const getTransactionColor = (type: string) => {
     return type === 'income' 
-      ? 'text-green-600 bg-green-50 border-green-200' 
-      : 'text-red-600 bg-red-50 border-red-200'
+      ? 'text-[#17BEBB] bg-gray-50 border-[#17BEBB]/30' 
+      : 'text-[#C41E3D] bg-gray-50 border-[#C41E3D]/30'
   }
 
   const getCategoryIcon = (category: string) => {
