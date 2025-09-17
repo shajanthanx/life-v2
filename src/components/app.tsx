@@ -482,6 +482,7 @@ function AppContent() {
             <DashboardView 
               data={appData} 
               onQuickAction={handleQuickAction}
+              onNavigateToFinance={() => setActiveView('finance')}
             />
           </div>
         )
@@ -724,6 +725,7 @@ function AppContent() {
           <DashboardView 
             data={appData} 
             onQuickAction={handleQuickAction}
+            onNavigateToFinance={() => setActiveView('finance')}
           />
         )
     }

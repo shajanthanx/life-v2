@@ -47,34 +47,36 @@ export function HabitsPage({ data, onDataUpdate, onAddHabit, onHabitEdit, onHabi
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Habits</h1>
-          <p className="text-muted-foreground">Track and analyze your daily habits</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold">Habits</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Track and analyze your daily habits</p>
         </div>
-        <Button onClick={handleAddHabit} className="gap-2">
+        <Button onClick={handleAddHabit} className="gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Add Habit
         </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'overview' | 'bulk' | 'manage' | 'analytics')}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
+          <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <Home className="h-4 w-4" />
-            Overview
+            <span>Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="manage" className="flex items-center gap-2">
+          <TabsTrigger value="manage" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <Settings className="h-4 w-4" />
-            Manage
+            <span>Manage</span>
           </TabsTrigger>
-          <TabsTrigger value="bulk" className="flex items-center gap-2">
+          <TabsTrigger value="bulk" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <Grid3X3 className="h-4 w-4" />
-            Table View
+            <span className="hidden sm:inline">Table View</span>
+            <span className="sm:hidden">Table</span>
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
+          <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <TrendingUp className="h-4 w-4" />
-            Analytics
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Stats</span>
           </TabsTrigger>
         </TabsList>
 

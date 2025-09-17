@@ -154,9 +154,24 @@ export interface SavingsGoal {
   name: string
   targetAmount: number
   currentAmount: number
-  deadline: Date
+  targetDate?: Date
+  description?: string
+  account?: string // UUID reference to user_accounts table
   isCompleted: boolean
   createdAt: Date
+}
+
+export interface UserAccount {
+  id: string
+  userId: string
+  name: string
+  type: 'checking' | 'savings' | 'investment' | 'credit' | 'cash' | 'crypto' | 'other'
+  balance: number
+  currency: string
+  description?: string
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface Investment {
@@ -337,6 +352,7 @@ export interface AppState {
   investments: Investment[]
   categories: Category[]
   predefinedExpenses: PredefinedExpense[]
+  accounts: UserAccount[]
   
   // Lifestyle data
   journalEntries: JournalEntry[]

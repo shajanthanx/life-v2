@@ -5,10 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigurationView } from './configuration-view'
 import { RecordingView } from './recording-view'
 import { AnalyticsView } from './analytics-view'
-import { AppState } from '@/types'
-import { Settings, Calendar, BarChart3 } from 'lucide-react'
+import { TransactionsView } from './transactions-view'
+import { SavingsView } from './savings-view'
+import { AppState, UserAccount } from '@/types'
+import { Settings, Calendar, BarChart3, List, PiggyBank } from 'lucide-react'
 import { getUserCategories, initializeUserCategories } from '@/lib/api/categories'
 import { getUserPredefinedExpenses } from '@/lib/api/predefined-expenses'
+import { getUserAccounts, createDefaultAccounts } from '@/lib/api/accounts'
+import { getUserSavingsGoals } from '@/lib/api/savings-goals'
 
 interface FinanceViewProps {
   data: AppState
@@ -74,6 +78,64 @@ export function FinanceView({ data, onDataUpdate, onAddTransaction, onAddSavings
     loadPredefinedExpenses()
   }, [data.predefinedExpenses?.length])
 
+  // Load accounts if not already loaded
+  useEffect(() => {
+    const loadAccounts = async () => {
+      const accounts = data.accounts || []
+      if (accounts.length === 0) {
+        try {
+          const { data: userAccounts } = await getUserAccounts()
+          if (userAccounts && userAccounts.length > 0) {
+            onDataUpdate({
+              ...data,
+              accounts: userAccounts
+            })
+          } else {
+            // Create default accounts if none exist
+            const { success } = await createDefaultAccounts()
+            if (success) {
+              const { data: defaultAccounts } = await getUserAccounts()
+              if (defaultAccounts) {
+                onDataUpdate({
+                  ...data,
+                  accounts: defaultAccounts
+                })
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading accounts:', error)
+        }
+      }
+    }
+
+    loadAccounts()
+  }, [data.accounts?.length])
+
+  // Load savings goals if not already loaded
+  useEffect(() => {
+    const loadSavingsGoals = async () => {
+      const savingsGoals = data.savingsGoals || []
+      if (savingsGoals.length === 0) {
+        try {
+          const { data: userSavingsGoals, error } = await getUserSavingsGoals()
+          if (error) {
+            console.error('Error loading savings goals in finance-view:', error)
+          } else {
+            onDataUpdate({
+              ...data,
+              savingsGoals: userSavingsGoals
+            })
+          }
+        } catch (error) {
+          console.error('Error loading savings goals:', error)
+        }
+      }
+    }
+
+    loadSavingsGoals()
+  }, [data.savingsGoals?.length])
+
   const handleUpdateCategories = (categories: typeof data.categories) => {
     onDataUpdate({
       ...data,
@@ -108,6 +170,13 @@ export function FinanceView({ data, onDataUpdate, onAddTransaction, onAddSavings
     })
   }
 
+  const handleUpdateAccounts = (accounts: UserAccount[]) => {
+    onDataUpdate({
+      ...data,
+      accounts
+    })
+  }
+
   if (isLoading) {
   return (
       <div className="flex items-center justify-center h-64">
@@ -122,25 +191,37 @@ export function FinanceView({ data, onDataUpdate, onAddTransaction, onAddSavings
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-                        <div>
+        <div>
           <h1 className="text-3xl font-bold">Finance</h1>
           <p className="text-muted-foreground">Track and manage your finances</p>
-                      </div>
-                </div>
+        </div>
+      </div>
                 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recording" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+          <TabsTrigger value="recording" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <Calendar className="h-4 w-4" />
-            Recording
+            <span className="hidden sm:inline">Recording</span>
+            <span className="sm:hidden">Record</span>
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
+          <TabsTrigger value="transactions" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <List className="h-4 w-4" />
+            <span className="hidden sm:inline">Transactions</span>
+            <span className="sm:hidden">List</span>
+          </TabsTrigger>
+          <TabsTrigger value="savings" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <PiggyBank className="h-4 w-4" />
+            <span>Savings</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <BarChart3 className="h-4 w-4" />
-            Analytics
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Stats</span>
           </TabsTrigger>
-          <TabsTrigger value="configuration" className="flex items-center gap-2">
+          <TabsTrigger value="configuration" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <Settings className="h-4 w-4" />
-            Configuration
+            <span className="hidden sm:inline">Configuration</span>
+            <span className="sm:hidden">Config</span>
           </TabsTrigger>
         </TabsList>
         
@@ -150,6 +231,23 @@ export function FinanceView({ data, onDataUpdate, onAddTransaction, onAddSavings
             categories={data.categories || []}
             predefinedExpenses={data.predefinedExpenses || []}
             onUpdateTransactions={handleUpdateTransactions}
+            onNavigateToTransactions={() => setActiveTab('transactions')}
+          />
+        </TabsContent>
+
+        <TabsContent value="transactions" className="mt-6">
+          <TransactionsView
+            transactions={data.transactions || []}
+            categories={data.categories || []}
+            onUpdateTransactions={handleUpdateTransactions}
+          />
+        </TabsContent>
+
+        <TabsContent value="savings" className="mt-6">
+          <SavingsView
+            savingsGoals={data.savingsGoals || []}
+            transactions={data.transactions || []}
+            onUpdateSavingsGoals={(goals) => onDataUpdate({ ...data, savingsGoals: goals })}
           />
         </TabsContent>
         
@@ -157,8 +255,8 @@ export function FinanceView({ data, onDataUpdate, onAddTransaction, onAddSavings
           <AnalyticsView
             transactions={data.transactions || []}
             categories={data.categories || []}
-            savingsGoals={data.savingsGoals || []}
             predefinedExpenses={data.predefinedExpenses || []}
+            accounts={data.accounts || []}
           />
         </TabsContent>
         
@@ -167,9 +265,11 @@ export function FinanceView({ data, onDataUpdate, onAddTransaction, onAddSavings
             categories={data.categories || []}
             predefinedExpenses={data.predefinedExpenses || []}
             incomeSources={data.incomeSources || []}
+            accounts={data.accounts || []}
             onUpdateCategories={handleUpdateCategories}
             onUpdatePredefinedExpenses={handleUpdatePredefinedExpenses}
             onUpdateIncomeSources={handleUpdateIncomeSources}
+            onUpdateAccounts={handleUpdateAccounts}
             onAddIncomeSource={onAddIncomeSource}
           />
         </TabsContent>

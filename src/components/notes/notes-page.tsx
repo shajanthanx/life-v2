@@ -149,19 +149,19 @@ export function NotesPage({ isLoading = false }: NotesPageProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Quick Notes</h1>
-          <p className="text-muted-foreground mt-1">Capture your thoughts and set reminders</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold">Quick Notes</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Capture your thoughts and set reminders</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:space-x-4">
           {remindersCount > 0 && (
             <Badge variant="destructive" className="flex items-center space-x-1">
               <Bell className="h-3 w-3" />
               <span>{remindersCount} reminder{remindersCount > 1 ? 's' : ''}</span>
             </Badge>
           )}
-          <Button onClick={() => setShowAddNote(!showAddNote)}>
+          <Button onClick={() => setShowAddNote(!showAddNote)} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Note
           </Button>
@@ -181,23 +181,24 @@ export function NotesPage({ isLoading = false }: NotesPageProps) {
               onChange={(e) => setNewNoteContent(e.target.value)}
               rows={3}
             />
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <Input
                   type="datetime-local"
                   value={newNoteReminder}
                   onChange={(e) => setNewNoteReminder(e.target.value)}
-                  className="w-auto"
+                  className="w-full sm:w-auto"
                 />
               </div>
-              <div className="flex space-x-2 ml-auto">
-                <Button variant="outline" onClick={() => setShowAddNote(false)}>
+              <div className="flex space-x-2 sm:ml-auto">
+                <Button variant="outline" onClick={() => setShowAddNote(false)} className="flex-1 sm:flex-none">
                   Cancel
                 </Button>
                 <Button 
                   onClick={handleCreateNote}
                   disabled={operationLoading === 'create'}
+                  className="flex-1 sm:flex-none"
                 >
                   Add Note
                 </Button>
@@ -240,7 +241,7 @@ export function NotesPage({ isLoading = false }: NotesPageProps) {
                                 })}
                                 rows={2}
                               />
-                              <div className="flex items-center space-x-4">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4">
                                 <Input
                                   type="datetime-local"
                                   value={editingNote.reminderDate ? 
@@ -249,13 +250,14 @@ export function NotesPage({ isLoading = false }: NotesPageProps) {
                                     ...editingNote,
                                     reminderDate: e.target.value ? new Date(e.target.value) : undefined
                                   })}
-                                  className="w-auto"
+                                  className="w-full sm:w-auto"
                                 />
                                 <div className="flex space-x-2">
                                   <Button 
                                     size="sm" 
                                     variant="outline"
                                     onClick={() => setEditingNote(null)}
+                                    className="flex-1 sm:flex-none"
                                   >
                                     Cancel
                                   </Button>
@@ -266,6 +268,7 @@ export function NotesPage({ isLoading = false }: NotesPageProps) {
                                       reminderDate: editingNote.reminderDate
                                     })}
                                     disabled={operationLoading === note.id}
+                                    className="flex-1 sm:flex-none"
                                   >
                                     Save
                                   </Button>

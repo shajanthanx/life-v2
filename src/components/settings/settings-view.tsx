@@ -103,6 +103,11 @@ export function SettingsView({ onDataExport, onDataImport, onDataReset }: Settin
         [key]: value
       }
     }))
+
+    // Special handling for currency changes - update localStorage immediately for finance components
+    if (category === 'preferences' && key === 'currency') {
+      localStorage.setItem('financeAppCurrency', value)
+    }
   }
 
   const handleModuleToggle = (moduleId: string) => {
@@ -395,8 +400,14 @@ export function SettingsView({ onDataExport, onDataImport, onDataReset }: Settin
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
+                    <option value="JPY">JPY (¥)</option>
                     <option value="CAD">CAD ($)</option>
                     <option value="AUD">AUD ($)</option>
+                    <option value="CHF">CHF</option>
+                    <option value="CNY">CNY (¥)</option>
+                    <option value="INR">INR (₹)</option>
+                    <option value="LKR">LKR (Rs)</option>
+                    <option value="BRL">BRL (R$)</option>
                   </select>
                 </div>
                 <div>
@@ -434,6 +445,51 @@ export function SettingsView({ onDataExport, onDataImport, onDataReset }: Settin
                     />
                   </div>
                 ))}
+              </div>
+              
+              <div className="flex justify-end pt-4 border-t">
+                <Button 
+                  onClick={async () => {
+                    try {
+                      setIsSaving(true)
+                      const { error } = await saveUserSettings({
+                        modules: settings.modules,
+                        notifications: settings.notifications,
+                        preferences: settings.preferences,
+                        privacy: settings.privacy
+                      })
+                      
+                      if (error) {
+                        addToast({
+                          message: `Failed to save preferences: ${error}`,
+                          type: 'error'
+                        })
+                        return
+                      }
+                      
+                      addToast({
+                        message: 'Preferences saved successfully!',
+                        type: 'success'
+                      })
+
+                      // If currency was changed, trigger page refresh to update all displays
+                      setTimeout(() => {
+                        window.location.reload()
+                      }, 1000)
+                    } catch (error) {
+                      addToast({
+                        message: 'Failed to save preferences',
+                        type: 'error'
+                      })
+                    } finally {
+                      setIsSaving(false)
+                    }
+                  }}
+                  disabled={isSaving}
+                >
+                  {isSaving ? <LoadingSpinner className="mr-2" /> : null}
+                  {isSaving ? 'Saving...' : 'Save Preferences'}
+                </Button>
               </div>
             </CardContent>
           </Card>

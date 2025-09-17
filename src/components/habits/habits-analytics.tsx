@@ -441,23 +441,27 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
               <CardTitle>Day of Week Performance</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={[
-                  { day: 'Sun', rate: 0 },
-                  { day: 'Mon', rate: 0 },
-                  { day: 'Tue', rate: 0 },
-                  { day: 'Wed', rate: 0 },
-                  { day: 'Thu', rate: 0 },
-                  { day: 'Fri', rate: 0 },
-                  { day: 'Sat', rate: 0 }
-                ]}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`${value}%`, 'Completion Rate']} />
-                  <Bar dataKey="rate" fill={selectedHabit.color || '#8884d8'} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="w-full overflow-x-auto">
+                <div className="min-w-[400px] md:min-w-full">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={[
+                      { day: 'Sun', rate: 0 },
+                      { day: 'Mon', rate: 0 },
+                      { day: 'Tue', rate: 0 },
+                      { day: 'Wed', rate: 0 },
+                      { day: 'Thu', rate: 0 },
+                      { day: 'Fri', rate: 0 },
+                      { day: 'Sat', rate: 0 }
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => [`${value}%`, 'Completion Rate']} />
+                      <Bar dataKey="rate" fill={selectedHabit.color || '#8884d8'} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -497,14 +501,14 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
     <div className="space-y-6">
       {/* Header with Controls */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Habits Analytics</h1>
-            <p className="text-muted-foreground">Track your progress and analyze habit patterns</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="text-center sm:text-left">
+            <h1 className="text-xl sm:text-2xl font-bold">Habits Analytics</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Track your progress and analyze habit patterns</p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-center sm:justify-end space-x-2">
             {/* Export Button */}
-            <Button variant="outline" size="sm" onClick={exportData}>
+            <Button variant="outline" size="sm" onClick={exportData} className="w-full sm:w-auto">
               <Download className="h-4 w-4 mr-1" />
               Export
             </Button>
@@ -512,15 +516,16 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
         </div>
 
         {/* Controls Row */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Date Range Selector */}
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1 justify-center lg:justify-start">
             {DATE_RANGES.map(range => (
               <Button
                 key={range.value}
                 variant={selectedRange === range.value ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedRange(range.value)}
+                className="text-xs sm:text-sm"
               >
                 {range.label}
               </Button>
@@ -528,86 +533,90 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
           </div>
 
           {/* Habit Selection */}
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+          <Card className="border shadow-sm w-full lg:w-auto">
+            <CardHeader className="pb-3 px-3 sm:px-6">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <div className="flex items-center gap-2">
-                    <Filter className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">Filter Habits</CardTitle>
+                    <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    <CardTitle className="text-sm sm:text-base">Filter Habits</CardTitle>
                   </div>
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-xs w-fit">
                     {selectedHabits.length} of {habits.length} selected
                   </Badge>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1 sm:gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={selectAllHabits}
                     disabled={selectedHabits.length === habits.length}
-                    className="h-8 text-xs bg-transparent text-[#007BFF] hover:bg-[#007BFF]/10 hover:text-[#007BFF] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="h-7 sm:h-8 px-2 sm:px-3 text-xs bg-transparent text-[#007BFF] hover:bg-[#007BFF]/10 hover:text-[#007BFF] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex-1 sm:flex-none"
                   >
                     <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Select All
+                    <span className="hidden sm:inline">Select All</span>
+                    <span className="sm:hidden">All</span>
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={removeAllSelections}
                     disabled={selectedHabits.length === 0}
-                    className="h-8 text-xs bg-transparent text-[#FF4C4C] hover:bg-[#FF4C4C]/10 hover:text-[#FF4C4C] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="h-7 sm:h-8 px-2 sm:px-3 text-xs bg-transparent text-[#FF4C4C] hover:bg-[#FF4C4C]/10 hover:text-[#FF4C4C] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex-1 sm:flex-none"
                   >
                     <XCircle className="h-3 w-3 mr-1" />
-                    Remove All
+                    <span className="hidden sm:inline">Remove All</span>
+                    <span className="sm:hidden">None</span>
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                {habits.map(habit => {
-                  const isExplicitlySelected = selectedHabits.includes(habit.id)
-                  
-                  return (
-                    <div 
-                      key={habit.id} 
-                      className={`
-                        flex items-center gap-3 px-3 py-2 rounded-md border cursor-pointer 
-                        transition-all duration-200 font-medium text-sm
-                        ${isExplicitlySelected
-                          ? 'bg-[#2D2D2D] border-[#2D2D2D] hover:bg-[#262626] text-white shadow-sm' 
-                          : 'bg-[#F0F0F0] border-[#E0E0E0] hover:bg-[#E8E8E8] text-[#333333]'
-                        }
-                      `}
-                      onClick={() => toggleHabitSelection(habit.id)}
-                      style={{
-                        borderRadius: '6px'
-                      }}
-                    >
-                      <Checkbox
-                        checked={isExplicitlySelected}
-                        onCheckedChange={() => toggleHabitSelection(habit.id)}
+            <CardContent className="pt-0 px-3 sm:px-6">
+              <div className="max-h-60 lg:max-h-48 overflow-y-auto">
+                <div className="grid grid-cols-1 gap-2">
+                  {habits.map(habit => {
+                    const isExplicitlySelected = selectedHabits.includes(habit.id)
+                    
+                    return (
+                      <div 
+                        key={habit.id} 
                         className={`
-                          pointer-events-none h-4 w-4 transition-all duration-200
-                          ${isExplicitlySelected 
-                            ? 'data-[state=checked]:bg-[#007BFF] data-[state=checked]:border-[#007BFF] data-[state=checked]:text-white' 
-                            : 'border-[#999999] data-[state=unchecked]:bg-white'
+                          flex items-center gap-2 px-2 py-2 rounded-md border cursor-pointer 
+                          transition-all duration-200 font-medium text-xs sm:text-sm
+                          ${isExplicitlySelected
+                            ? 'bg-[#2D2D2D] border-[#2D2D2D] hover:bg-[#262626] text-white shadow-sm' 
+                            : 'bg-[#F0F0F0] border-[#E0E0E0] hover:bg-[#E8E8E8] text-[#333333]'
                           }
                         `}
-                      />
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div 
-                          className="w-3 h-3 rounded-full flex-shrink-0 border border-white/30 shadow-sm" 
-                          style={{ backgroundColor: habit.color }}
+                        onClick={() => toggleHabitSelection(habit.id)}
+                        style={{
+                          borderRadius: '6px'
+                        }}
+                      >
+                        <Checkbox
+                          checked={isExplicitlySelected}
+                          onCheckedChange={() => toggleHabitSelection(habit.id)}
+                          className={`
+                            pointer-events-none h-3 w-3 sm:h-4 sm:w-4 transition-all duration-200
+                            ${isExplicitlySelected 
+                              ? 'data-[state=checked]:bg-[#007BFF] data-[state=checked]:border-[#007BFF] data-[state=checked]:text-white' 
+                              : 'border-[#999999] data-[state=unchecked]:bg-white'
+                            }
+                          `}
                         />
-                        <span className="truncate">
-                          {habit.name}
-                        </span>
+                        <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+                          <div 
+                            className="w-2 h-2 sm:w-3 sm:h-3 rounded-full flex-shrink-0 border border-white/30 shadow-sm" 
+                            style={{ backgroundColor: habit.color }}
+                          />
+                          <span className="truncate text-xs sm:text-sm">
+                            {habit.name}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
               
               {selectedHabits.length > 0 && (
@@ -625,18 +634,20 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
 
       {/* Analytics Tabs */}
       <Tabs value={analyticsTab} onValueChange={(value) => setAnalyticsTab(value as 'overview' | 'trends' | 'heatmaps')}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 gap-1">
+          <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <Target className="h-4 w-4" />
-            Overview
+            <span className="hidden sm:inline">Overview</span>
+            <span className="sm:hidden">Stats</span>
           </TabsTrigger>
-          <TabsTrigger value="trends" className="flex items-center gap-2">
+          <TabsTrigger value="trends" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <TrendingUp className="h-4 w-4" />
-            Trends
+            <span>Trends</span>
           </TabsTrigger>
-          <TabsTrigger value="heatmaps" className="flex items-center gap-2">
+          <TabsTrigger value="heatmaps" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <Calendar className="h-4 w-4" />
-            Heatmaps
+            <span className="hidden sm:inline">Heatmaps</span>
+            <span className="sm:hidden">Heat</span>
           </TabsTrigger>
         </TabsList>
 
@@ -715,37 +726,45 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
               <CardTitle>Daily Completion Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart 
-                  key={selectedHabits.join(',')} 
-                  data={dailyTrendData} 
-                  margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(value) => formatDate(new Date(value), 'MM/dd')}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                  />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip 
-                    labelFormatter={(value) => formatDate(new Date(value), 'MMM dd, yyyy')}
-                    formatter={(value) => [`${Number(value).toFixed(1)}%`, 'Completion Rate']}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="completionRate" 
-                    stroke="#8884d8" 
-                    fill="#8884d8" 
-                    fillOpacity={0.6}
-                    animationDuration={300}
-                    animationBegin={0}
-                    isAnimationActive={true}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="w-full overflow-x-auto">
+                <div className="min-w-[600px] md:min-w-full">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart 
+                      key={selectedHabits.join(',')} 
+                      data={dailyTrendData} 
+                      margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="date" 
+                        tickFormatter={(value) => formatDate(new Date(value), 'MM/dd')}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip 
+                        labelFormatter={(value) => formatDate(new Date(value), 'MMM dd, yyyy')}
+                        formatter={(value) => [`${Number(value).toFixed(1)}%`, 'Completion Rate']}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="completionRate" 
+                        stroke="#8884d8" 
+                        fill="#8884d8" 
+                        fillOpacity={0.6}
+                        animationDuration={300}
+                        animationBegin={0}
+                        isAnimationActive={true}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              {/* Mobile scroll hint */}
+              <div className="block md:hidden text-xs text-muted-foreground text-center mt-2">
+                ← Scroll horizontally to see full chart →
+              </div>
             </CardContent>
           </Card>
 

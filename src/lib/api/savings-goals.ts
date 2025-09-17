@@ -9,16 +9,28 @@ export async function createSavingsGoal(goalData: Omit<SavingsGoal, 'id' | 'crea
       return { data: null, error: 'Not authenticated' }
     }
 
+    const insertData: any = {
+      user_id: userId,
+      name: goalData.name,
+      target_amount: goalData.targetAmount,
+      current_amount: goalData.currentAmount || 0,
+      is_completed: goalData.isCompleted || false
+    }
+
+    // Add optional fields if provided
+    if (goalData.targetDate) {
+      insertData.target_date = goalData.targetDate.toISOString().split('T')[0]
+    }
+    if (goalData.description) {
+      insertData.description = goalData.description
+    }
+    if (goalData.account) {
+      insertData.account = goalData.account
+    }
+
     const { data, error } = await supabase
       .from('savings_goals')
-      .insert({
-        user_id: userId,
-        name: goalData.name,
-        target_amount: goalData.targetAmount,
-        current_amount: goalData.currentAmount,
-        deadline: goalData.deadline.toISOString(),
-        is_completed: goalData.isCompleted
-      })
+      .insert(insertData)
       .select()
       .single()
 
@@ -31,7 +43,9 @@ export async function createSavingsGoal(goalData: Omit<SavingsGoal, 'id' | 'crea
       name: data.name,
       targetAmount: data.target_amount,
       currentAmount: data.current_amount,
-      deadline: new Date(data.deadline),
+      targetDate: data.target_date ? new Date(data.target_date) : undefined,
+      description: data.description,
+      account: data.account,
       isCompleted: data.is_completed,
       createdAt: new Date(data.created_at)
     }
@@ -53,8 +67,18 @@ export async function updateSavingsGoal(id: string, updates: Partial<SavingsGoal
     const updateData: any = {}
     if (updates.name !== undefined) updateData.name = updates.name
     if (updates.targetAmount !== undefined) updateData.target_amount = updates.targetAmount
-    if (updates.currentAmount !== undefined) updateData.current_amount = updates.currentAmount
-    if (updates.deadline !== undefined) updateData.deadline = updates.deadline.toISOString()
+    if (updates.currentAmount !== undefined) {
+      updateData.current_amount = updates.currentAmount
+      // Check if goal should be marked complete
+      if (updates.targetAmount && updates.currentAmount >= updates.targetAmount) {
+        updateData.is_completed = true
+      }
+    }
+    if (updates.targetDate !== undefined) {
+      updateData.target_date = updates.targetDate ? updates.targetDate.toISOString().split('T')[0] : null
+    }
+    if (updates.description !== undefined) updateData.description = updates.description
+    if (updates.account !== undefined) updateData.account = updates.account
     if (updates.isCompleted !== undefined) updateData.is_completed = updates.isCompleted
 
     const { data, error } = await supabase
@@ -74,7 +98,9 @@ export async function updateSavingsGoal(id: string, updates: Partial<SavingsGoal
       name: data.name,
       targetAmount: data.target_amount,
       currentAmount: data.current_amount,
-      deadline: new Date(data.deadline),
+      targetDate: data.target_date ? new Date(data.target_date) : undefined,
+      description: data.description,
+      account: data.account,
       isCompleted: data.is_completed,
       createdAt: new Date(data.created_at)
     }
@@ -132,7 +158,9 @@ export async function getUserSavingsGoals(): Promise<{ data: SavingsGoal[]; erro
       name: goal.name,
       targetAmount: goal.target_amount,
       currentAmount: goal.current_amount,
-      deadline: new Date(goal.deadline),
+      targetDate: goal.target_date ? new Date(goal.target_date) : undefined,
+      description: goal.description,
+      account: goal.account,
       isCompleted: goal.is_completed,
       createdAt: new Date(goal.created_at)
     }))
@@ -186,7 +214,9 @@ export async function addToSavingsGoal(id: string, amount: number): Promise<{ da
       name: data.name,
       targetAmount: data.target_amount,
       currentAmount: data.current_amount,
-      deadline: new Date(data.deadline),
+      targetDate: data.target_date ? new Date(data.target_date) : undefined,
+      description: data.description,
+      account: data.account,
       isCompleted: data.is_completed,
       createdAt: new Date(data.created_at)
     }

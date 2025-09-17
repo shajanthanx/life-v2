@@ -290,9 +290,9 @@ export function HabitsOverview({ habits, onHabitUpdate, onAddHabit }: HabitsOver
   return (
     <div className="space-y-6">
       {/* Today's Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Completed Today</p>
@@ -309,7 +309,7 @@ export function HabitsOverview({ habits, onHabitUpdate, onAddHabit }: HabitsOver
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Pending Today</p>
@@ -326,7 +326,7 @@ export function HabitsOverview({ habits, onHabitUpdate, onAddHabit }: HabitsOver
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">This Week</p>
@@ -344,28 +344,33 @@ export function HabitsOverview({ habits, onHabitUpdate, onAddHabit }: HabitsOver
       </div>
 
       {/* Today's Habits */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Today's Habits
-            <Badge variant="outline" className="ml-auto">
+      <Card className="bg-gradient-to-br from-white to-gray-50/50">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              Today's Habits
+            </CardTitle>
+            <Badge variant="outline" className="w-fit bg-blue-50 text-blue-700 border-blue-200">
               {formatDate(today, 'EEEE, MMM d')}
             </Badge>
-          </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {activeHabits.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">No active habits yet</p>
-              <Button onClick={onAddHabit} className="gap-2">
+            <div className="text-center py-8 px-4">
+              <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-gray-500" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">No active habits yet</h3>
+              <p className="text-gray-600 mb-4 text-sm">Start building positive habits for a better life</p>
+              <Button onClick={onAddHabit} className="gap-2 bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4" />
                 Create Your First Habit
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {activeHabits.map(habit => {
                 const isCompleted = todaysStatus.completed.includes(habit)
                 const isLoggingThis = isLogging === habit.id
@@ -373,51 +378,76 @@ export function HabitsOverview({ habits, onHabitUpdate, onAddHabit }: HabitsOver
                 return (
                   <div 
                     key={habit.id}
-                    className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    className={`group relative p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                      isCompleted 
+                        ? 'bg-green-50 border-green-200 hover:border-green-300' 
+                        : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                    onClick={() => !isLoggingThis && handleToggleHabit(habit, !isCompleted)}
                   >
-                    <Checkbox
-                      checked={isCompleted}
-                      disabled={isLoggingThis}
-                      onCheckedChange={(checked) => 
-                        handleToggleHabit(habit, checked as boolean)
-                      }
-                      className="h-5 w-5"
-                    />
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{getCategoryIcon(habit.category)}</span>
-                        <h3 className={`font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
-                          {habit.name}
-                        </h3>
-                        <Badge 
-                          variant="outline" 
-                          className="h-5 px-2 text-xs"
-                          style={{ backgroundColor: `${habit.color}20`, borderColor: habit.color }}
-                        >
-                          {habit.frequency}
-                        </Badge>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0">
+                        <Checkbox
+                          checked={isCompleted}
+                          disabled={isLoggingThis}
+                          onCheckedChange={(checked) => 
+                            handleToggleHabit(habit, checked as boolean)
+                          }
+                          className={`h-6 w-6 ${
+                            isCompleted ? 'data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600' : ''
+                          }`}
+                        />
                       </div>
-                      {habit.description && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {habit.description}
-                        </p>
-                      )}
+                      
+                      <div className="flex-1 min-w-0">
+                        {/* Habit Name Row */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg flex-shrink-0">{getCategoryIcon(habit.category)}</span>
+                          <h3 className={`font-semibold text-gray-900 truncate ${
+                            isCompleted ? 'line-through text-gray-500' : ''
+                          }`}>
+                            {habit.name}
+                          </h3>
+                        </div>
+                        
+                        {/* Badges Row */}
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant="secondary" 
+                            className="text-xs font-medium px-2 py-1"
+                            style={{ 
+                              backgroundColor: `${habit.color}15`, 
+                              color: habit.color,
+                              borderColor: `${habit.color}30`
+                            }}
+                          >
+                            {habit.frequency}
+                          </Badge>
+                          {isCompleted ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Done
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Pending
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {habit.description && (
+                          <p className="text-sm text-gray-600 mt-2 truncate">
+                            {habit.description}
+                          </p>
+                        )}
+                      </div>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      {isCompleted ? (
-                        <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Done
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Pending
-                        </Badge>
-                      )}
-                    </div>
+                    
+                    {/* Progress indicator */}
+                    <div className={`absolute bottom-0 left-0 h-1 rounded-b-xl transition-all duration-300 ${
+                      isCompleted ? 'bg-green-400 w-full' : 'bg-gray-200 w-0 group-hover:w-1/4'
+                    }`} />
                   </div>
                 )
               })}
@@ -469,7 +499,7 @@ export function HabitsOverview({ habits, onHabitUpdate, onAddHabit }: HabitsOver
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {currentStreaks.slice(0, 6).map(({ habit, streak }) => (
                 <div 
                   key={habit.id}

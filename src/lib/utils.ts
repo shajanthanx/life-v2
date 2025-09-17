@@ -18,9 +18,31 @@ export function formatDate(date: Date, formatStr?: string): string {
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
+  // Get currency preference from localStorage, default to USD
+  const savedCurrency = typeof window !== 'undefined' 
+    ? localStorage.getItem('financeAppCurrency') || 'USD'
+    : 'USD'
+  
+  // Currency to locale mapping
+  const currencyToLocale: Record<string, string> = {
+    'USD': 'en-US',
+    'EUR': 'de-DE',
+    'GBP': 'en-GB', 
+    'JPY': 'ja-JP',
+    'CAD': 'en-CA',
+    'AUD': 'en-AU',
+    'CHF': 'de-CH',
+    'CNY': 'zh-CN',
+    'INR': 'en-IN',
+    'LKR': 'en-LK',
+    'BRL': 'pt-BR'
+  }
+  
+  const locale = currencyToLocale[savedCurrency] || 'en-US'
+  
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "USD",
+    currency: savedCurrency,
   }).format(amount)
 }
 

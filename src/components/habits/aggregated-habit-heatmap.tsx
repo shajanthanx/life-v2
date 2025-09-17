@@ -25,6 +25,7 @@ export function AggregatedHabitHeatmap({
   onSelectAllHabits,
   onYearChange
 }: AggregatedHabitHeatmapProps) {
+  const [isHabitsExpanded, setIsHabitsExpanded] = useState(false)
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null)
   const [filteredHabitId, setFilteredHabitId] = useState<string | null>(null)
 
@@ -190,7 +191,7 @@ export function AggregatedHabitHeatmap({
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:space-x-3">
               {/* Year Selector */}
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-medium text-muted-foreground">Year:</span>
@@ -209,24 +210,25 @@ export function AggregatedHabitHeatmap({
               </div>
               
               {/* Optional Export Button */}
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto">
                 <Download className="h-4 w-4" />
-                Export
+                <span className="hidden sm:inline">Export</span>
+                <span className="sm:hidden">Export Data</span>
               </Button>
             </div>
           </div>
         </div>
 
         {/* Progress Summary at Top */}
-        <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Progress Summary</h3>
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+        <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold text-gray-800 text-center sm:text-left">Progress Summary</h3>
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 self-center sm:self-auto">
               {year}
             </Badge>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Circular Progress Ring */}
             <div className="flex flex-col items-center space-y-2">
               <div className="relative w-24 h-24">
@@ -266,7 +268,7 @@ export function AggregatedHabitHeatmap({
             </div>
             
             {/* Stats Grid */}
-            <div className="md:col-span-2 grid grid-cols-2 gap-4">
+            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="bg-white rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center gap-2 mb-1">
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -313,44 +315,132 @@ export function AggregatedHabitHeatmap({
         {/* Enhanced Habit Tags Section */}
         {filteredHabits.length > 1 && (
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Activity className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">Aggregating data from:</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Aggregating data from:</span>
+                <Badge variant="secondary" className="text-xs">{filteredHabits.length} habits</Badge>
+              </div>
+              {/* Toggle button for mobile */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsHabitsExpanded(!isHabitsExpanded)}
+                className="md:hidden h-8 px-2 text-xs"
+              >
+                {isHabitsExpanded ? 'Show less' : `Show all (${filteredHabits.length})`}
+              </Button>
             </div>
-            <div className="flex flex-wrap gap-3">
-              {filteredHabits.map(habit => {
-                const HabitIcon = getHabitIcon(habit.name)
-                const themeColors = getHabitThemeColor(habit.name)
-                const isFiltered = filteredHabitId === habit.id
-                
-                return (
-                  <div
-                    key={habit.id}
-                    className={`group relative flex items-center gap-2 px-3 py-2 rounded-full border-2 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-105 ${
-                      isFiltered 
-                        ? 'ring-2 ring-primary ring-offset-1 shadow-md transform scale-105'
-                        : ''
-                    } ${themeColors.bg} ${themeColors.border}`}
-                    onClick={() => setFilteredHabitId(isFiltered ? null : habit.id)}
-                    title={`${habit.name} - Click to filter heatmap`}
-                  >
-                    <HabitIcon className={`h-4 w-4 ${themeColors.text}`} />
-                    <div 
-                      className="w-3 h-3 rounded-full border border-white shadow-sm" 
-                      style={{ backgroundColor: habit.color }}
-                    />
-                    <span className={`text-sm font-medium ${themeColors.text}`}>
-                      {habit.name}
-                    </span>
-                    
-                    {/* Tooltip on hover */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                      {habit.category} • {habit.frequency}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
+            
+            {/* Desktop: Always show all habits */}
+            <div className="hidden md:block">
+              <div className="flex flex-wrap gap-3">
+                {filteredHabits.map(habit => {
+                  const HabitIcon = getHabitIcon(habit.name)
+                  const themeColors = getHabitThemeColor(habit.name)
+                  const isFiltered = filteredHabitId === habit.id
+                  
+                  return (
+                    <div
+                      key={habit.id}
+                      className={`group relative flex items-center gap-2 px-3 py-2 rounded-full border-2 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-105 ${
+                        isFiltered 
+                          ? 'ring-2 ring-primary ring-offset-1 shadow-md transform scale-105'
+                          : ''
+                      } ${themeColors.bg} ${themeColors.border}`}
+                      onClick={() => setFilteredHabitId(isFiltered ? null : habit.id)}
+                      title={`${habit.name} - Click to filter heatmap`}
+                    >
+                      <HabitIcon className={`h-4 w-4 ${themeColors.text}`} />
+                      <div 
+                        className="w-3 h-3 rounded-full border border-white shadow-sm" 
+                        style={{ backgroundColor: habit.color }}
+                      />
+                      <span className={`text-sm font-medium ${themeColors.text}`}>
+                        {habit.name}
+                      </span>
+                      
+                      {/* Tooltip on hover */}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        {habit.category} • {habit.frequency}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
+            </div>
+            
+            {/* Mobile: Collapsible view */}
+            <div className="md:hidden">
+              {/* Collapsed view: Show first 3 habits */}
+              {!isHabitsExpanded && (
+                <div className="flex flex-wrap gap-2">
+                  {filteredHabits.slice(0, 3).map(habit => {
+                    const HabitIcon = getHabitIcon(habit.name)
+                    const themeColors = getHabitThemeColor(habit.name)
+                    const isFiltered = filteredHabitId === habit.id
+                    
+                    return (
+                      <div
+                        key={habit.id}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full border cursor-pointer transition-all duration-200 ${
+                          isFiltered 
+                            ? 'ring-1 ring-primary ring-offset-1 shadow-sm'
+                            : ''
+                        } ${themeColors.bg} ${themeColors.border}`}
+                        onClick={() => setFilteredHabitId(isFiltered ? null : habit.id)}
+                      >
+                        <HabitIcon className={`h-3 w-3 ${themeColors.text}`} />
+                        <div 
+                          className="w-2 h-2 rounded-full border border-white" 
+                          style={{ backgroundColor: habit.color }}
+                        />
+                        <span className={`text-xs font-medium ${themeColors.text}`}>
+                          {habit.name}
+                        </span>
+                      </div>
+                    )
+                  })}
+                  {filteredHabits.length > 3 && (
+                    <div className="flex items-center px-2 py-1 text-xs text-muted-foreground bg-gray-100 rounded-full">
+                      +{filteredHabits.length - 3} more
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Expanded view: Show all habits */}
+              {isHabitsExpanded && (
+                <div className="flex flex-wrap gap-2">
+                  {filteredHabits.map(habit => {
+                    const HabitIcon = getHabitIcon(habit.name)
+                    const themeColors = getHabitThemeColor(habit.name)
+                    const isFiltered = filteredHabitId === habit.id
+                    
+                    return (
+                      <div
+                        key={habit.id}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full border cursor-pointer transition-all duration-200 ${
+                          isFiltered 
+                            ? 'ring-1 ring-primary ring-offset-1 shadow-sm'
+                            : ''
+                        } ${themeColors.bg} ${themeColors.border}`}
+                        onClick={() => setFilteredHabitId(isFiltered ? null : habit.id)}
+                      >
+                        <HabitIcon className={`h-3 w-3 ${themeColors.text}`} />
+                        <div 
+                          className="w-2 h-2 rounded-full border border-white" 
+                          style={{ backgroundColor: habit.color }}
+                        />
+                        <span className={`text-xs font-medium ${themeColors.text}`}>
+                          {habit.name}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
             
             {filteredHabitId && (
@@ -371,122 +461,136 @@ export function AggregatedHabitHeatmap({
         )}
 
 
-        {/* Full-width Responsive Heatmap */}
+        {/* Mobile-Friendly Scrollable Heatmap */}
         <div className="space-y-4 w-full">
-          {/* Month labels */}
-          <div className="flex text-sm text-muted-foreground w-full">
-            <div className="w-16 flex-shrink-0"></div> {/* Space for weekday labels */}
-            <div className="flex-1 grid grid-cols-53 gap-1">
-              {Array.from({ length: 53 }, (_, weekIndex) => {
-                // Calculate first day of this week
-                const startOfYear = new Date(year, 0, 1)
-                const startOfFirstWeek = new Date(startOfYear)
-                startOfFirstWeek.setDate(startOfYear.getDate() - startOfYear.getDay())
-                
-                const weekStart = new Date(startOfFirstWeek)
-                weekStart.setDate(startOfFirstWeek.getDate() + (weekIndex * 7))
-                
-                // Show month label on first week of each month, but only if it's within the current year
-                const shouldShowMonth = (weekStart.getDate() <= 7 || weekIndex === 0) && weekStart.getFullYear() === year
-                const monthName = shouldShowMonth ? monthNames[weekStart.getMonth()] : ''
-                
-                return (
-                  <div key={weekIndex} className="text-center text-xs">
-                    {monthName}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Main heatmap grid */}
-          <div className="flex w-full">
-            {/* Weekday labels */}
-            <div className="w-16 flex-shrink-0 pr-3 text-xs text-muted-foreground">
-              {weekdays.map((day, index) => (
-                <div key={day} className="h-4 mb-1 flex items-center justify-end">
-                  <span className="text-xs">
-                    {index % 2 === 1 ? day.substring(0, 3) : ''}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Contribution squares grid */}
-            <div className="flex-1 grid grid-cols-53 gap-1">
-              {/* Generate 53 weeks */}
-              {Array.from({ length: 53 }, (_, weekIndex) => (
-                <div key={weekIndex} className="grid grid-rows-7 gap-1">
-                  {/* 7 days per week */}
-                  {Array.from({ length: 7 }, (_, dayIndex) => {
-                    // Calculate the actual date for this square
+          {/* Container with horizontal scroll for mobile */}
+          <div className="w-full overflow-x-auto pb-2">
+            <div className="min-w-[880px] space-y-3">
+              {/* Month labels */}
+              <div className="flex text-sm text-muted-foreground">
+                <div className="w-16 flex-shrink-0"></div> {/* Space for weekday labels */}
+                <div className="flex gap-1" style={{ width: '848px' }}> {/* 53 weeks * 16px = 848px */}
+                  {Array.from({ length: 53 }, (_, weekIndex) => {
+                    // Calculate first day of this week
                     const startOfYear = new Date(year, 0, 1)
                     const startOfFirstWeek = new Date(startOfYear)
-                    startOfFirstWeek.setDate(startOfYear.getDate() - startOfYear.getDay()) // Go to Sunday of first week
+                    startOfFirstWeek.setDate(startOfYear.getDate() - startOfYear.getDay())
                     
-                    const currentDate = new Date(startOfFirstWeek)
-                    currentDate.setDate(startOfFirstWeek.getDate() + (weekIndex * 7) + dayIndex)
+                    const weekStart = new Date(startOfFirstWeek)
+                    weekStart.setDate(startOfFirstWeek.getDate() + (weekIndex * 7))
                     
-                    // Find the corresponding data point
-                    const dayData = heatmapData.find(d => 
-                      d.date.getFullYear() === currentDate.getFullYear() &&
-                      d.date.getMonth() === currentDate.getMonth() &&
-                      d.date.getDate() === currentDate.getDate()
-                    )
-
-                    // Don't show squares for dates outside the current year
-                    if (currentDate.getFullYear() !== year) {
-                      return <div key={dayIndex} className="w-4 h-4 bg-transparent" />
-                    }
-
-                    const tooltipContent = dayData
-                      ? `${formatDate(currentDate, 'MMM dd, yyyy')}\n${dayData.completedCount}/${dayData.totalHabits} habits completed (${dayData.completionRate.toFixed(1)}%)${
-                          dayData.habitDetails.length > 0 ? `\n\nHabits:\n${dayData.habitDetails.map(h => `${h.completed ? '[\u2713]' : '[\u2717]'} ${h.name}`).join('\n')}` : ''
-                        }${
-                          dayData.notes.length > 0 ? `\n\nNotes:\n${dayData.notes.join('\n')}` : ''
-                        }`
-                      : `${formatDate(currentDate, 'MMM dd, yyyy')}\nNo data`
-
+                    // Show month label on first week of each month, but only if it's within the current year
+                    const shouldShowMonth = (weekStart.getDate() <= 7 || weekIndex === 0) && weekStart.getFullYear() === year
+                    const monthName = shouldShowMonth ? monthNames[weekStart.getMonth()] : ''
+                    
                     return (
-                      <div
-                        key={dayIndex}
-                        className={`w-4 h-4 rounded-sm cursor-pointer transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-primary hover:ring-offset-1 hover:shadow-lg relative group ${
-                          dayData ? getIntensityClass(dayData.completionRate) : 'bg-transparent'
-                        }`}
-                        title={tooltipContent}
-                        onMouseEnter={() => setHoveredDay(currentDate)}
-                        onMouseLeave={() => setHoveredDay(null)}
-                      >
-                        {/* Enhanced Tooltip */}
-                        {hoveredDay && hoveredDay.getTime() === currentDate.getTime() && dayData && (
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                            <div className="font-semibold">{formatDate(currentDate, 'MMM dd, yyyy')}</div>
-                            <div className="text-gray-300">
-                              {dayData.completedCount}/{dayData.totalHabits} habits ({dayData.completionRate.toFixed(1)}%)
-                            </div>
-                            {dayData.habitDetails.length > 0 && (
-                              <div className="mt-1 space-y-0.5">
-                                {dayData.habitDetails.slice(0, 3).map((habit, idx) => (
-                                  <div key={idx} className="flex items-center gap-1 text-xs">
-                                    <span className={habit.completed ? 'text-green-400' : 'text-red-400'}>
-                                      {habit.completed ? '\u2713' : '\u2717'}
-                                    </span>
-                                    <span>{habit.name}</span>
-                                  </div>
-                                ))}
-                                {dayData.habitDetails.length > 3 && (
-                                  <div className="text-xs text-gray-400">+{dayData.habitDetails.length - 3} more</div>
-                                )}
-                              </div>
-                            )}
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
-                          </div>
-                        )}
+                      <div key={weekIndex} className="w-4 text-center text-xs flex-shrink-0">
+                        {monthName}
                       </div>
                     )
                   })}
                 </div>
-              ))}
+              </div>
+
+              {/* Main heatmap grid */}
+              <div className="flex">
+                {/* Weekday labels */}
+                <div className="w-16 flex-shrink-0 pr-3 text-xs text-muted-foreground">
+                  {weekdays.map((day, index) => (
+                    <div key={day} className="h-4 mb-1 flex items-center justify-end">
+                      <span className="text-xs">
+                        {index % 2 === 1 ? day.substring(0, 3) : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Contribution squares grid with fixed width */}
+                <div className="flex gap-1" style={{ width: '848px' }}>
+                  {/* Generate 53 weeks */}
+                  {Array.from({ length: 53 }, (_, weekIndex) => (
+                    <div key={weekIndex} className="flex flex-col gap-1 w-4 flex-shrink-0">
+                      {/* 7 days per week */}
+                      {Array.from({ length: 7 }, (_, dayIndex) => {
+                        // Calculate the actual date for this square
+                        const startOfYear = new Date(year, 0, 1)
+                        const startOfFirstWeek = new Date(startOfYear)
+                        startOfFirstWeek.setDate(startOfYear.getDate() - startOfYear.getDay()) // Go to Sunday of first week
+                        
+                        const currentDate = new Date(startOfFirstWeek)
+                        currentDate.setDate(startOfFirstWeek.getDate() + (weekIndex * 7) + dayIndex)
+                        
+                        // Find the corresponding data point
+                        const dayData = heatmapData.find(d => 
+                          d.date.getFullYear() === currentDate.getFullYear() &&
+                          d.date.getMonth() === currentDate.getMonth() &&
+                          d.date.getDate() === currentDate.getDate()
+                        )
+
+                        // Don't show squares for dates outside the current year
+                        if (currentDate.getFullYear() !== year) {
+                          return <div key={dayIndex} className="w-4 h-4 bg-transparent flex-shrink-0" />
+                        }
+
+                        const tooltipContent = dayData
+                          ? `${formatDate(currentDate, 'MMM dd, yyyy')}\n${dayData.completedCount}/${dayData.totalHabits} habits completed (${dayData.completionRate.toFixed(1)}%)${
+                              dayData.habitDetails.length > 0 ? `\n\nHabits:\n${dayData.habitDetails.map(h => `${h.completed ? '[\u2713]' : '[\u2717]'} ${h.name}`).join('\n')}` : ''
+                            }${
+                              dayData.notes.length > 0 ? `\n\nNotes:\n${dayData.notes.join('\n')}` : ''
+                            }`
+                          : `${formatDate(currentDate, 'MMM dd, yyyy')}\nNo data`
+
+                        return (
+                          <div
+                            key={dayIndex}
+                            className={`w-4 h-4 rounded-sm cursor-pointer transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-primary hover:ring-offset-1 hover:shadow-lg relative group flex-shrink-0 ${
+                              dayData ? getIntensityClass(dayData.completionRate) : 'bg-transparent'
+                            }`}
+                            title={tooltipContent}
+                            onMouseEnter={() => setHoveredDay(currentDate)}
+                            onMouseLeave={() => setHoveredDay(null)}
+                          >
+                            {/* Enhanced Tooltip */}
+                            {hoveredDay && hoveredDay.getTime() === currentDate.getTime() && dayData && (
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                <div className="font-semibold">{formatDate(currentDate, 'MMM dd, yyyy')}</div>
+                                <div className="text-gray-300">
+                                  {dayData.completedCount}/{dayData.totalHabits} habits ({dayData.completionRate.toFixed(1)}%)
+                                </div>
+                                {dayData.habitDetails.length > 0 && (
+                                  <div className="mt-1 space-y-0.5">
+                                    {dayData.habitDetails.slice(0, 3).map((habit, idx) => (
+                                      <div key={idx} className="flex items-center gap-1 text-xs">
+                                        <span className={habit.completed ? 'text-green-400' : 'text-red-400'}>
+                                          {habit.completed ? '\u2713' : '\u2717'}
+                                        </span>
+                                        <span>{habit.name}</span>
+                                      </div>
+                                    ))}
+                                    {dayData.habitDetails.length > 3 && (
+                                      <div className="text-xs text-gray-400">+{dayData.habitDetails.length - 3} more</div>
+                                    )}
+                                  </div>
+                                )}
+                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Mobile scroll hint */}
+              <div className="block sm:hidden text-xs text-muted-foreground text-center py-2 border-t">
+                <span className="flex items-center justify-center gap-1">
+                  <span>←</span>
+                  <span>Scroll horizontally to see more</span>
+                  <span>→</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -496,10 +600,10 @@ export function AggregatedHabitHeatmap({
           <div className="border-t border-gray-200 pt-4"></div>
           
           {/* Compact Legend */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm flex-wrap">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
               <span className="text-sm font-medium text-muted-foreground">Completion Scale:</span>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 rounded-sm bg-gray-300" />
                   <span className="text-xs text-muted-foreground">0%</span>
@@ -523,9 +627,9 @@ export function AggregatedHabitHeatmap({
               </div>
             </div>
             
-            {/* Single habit details - inline */}
+            {/* Single habit details - responsive */}
             {filteredHabits.length === 1 && (
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                 <span>Category: <span className="font-medium text-foreground capitalize">{filteredHabits[0].category}</span></span>
                 <span>Frequency: <span className="font-medium text-foreground capitalize">{filteredHabits[0].frequency}</span></span>
                 <span>Status: <span className="font-medium text-foreground">{filteredHabits[0].isActive ? 'Active' : 'Inactive'}</span></span>

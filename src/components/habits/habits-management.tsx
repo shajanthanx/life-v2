@@ -157,30 +157,32 @@ export function HabitsManagement({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Manage Habits</h2>
-          <p className="text-muted-foreground">Create, edit, and organize your habits</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="text-center sm:text-left">
+          <h2 className="text-xl sm:text-2xl font-bold">Manage Habits</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">Create, edit, and organize your habits</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center sm:justify-end gap-2">
           {/* View Toggle */}
           <div className="flex items-center border rounded-lg p-1">
             <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('table')}
-              className="h-8 px-3"
+              className="h-8 px-2 sm:px-3"
             >
               <List className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Table</span>
             </Button>
             <Button
               variant={viewMode === 'cards' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('cards')}
-              className="h-8 px-3"
+              className="h-8 px-2 sm:px-3"
             >
               <Grid className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Cards</span>
             </Button>
           </div>
           
@@ -194,12 +196,12 @@ export function HabitsManagement({
       {/* Empty State */}
       {habits.length === 0 ? (
         <Card>
-          <CardContent className="py-12">
+          <CardContent className="py-8 sm:py-12 px-4">
             <div className="text-center">
-              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No habits yet</h3>
-              <p className="text-muted-foreground mb-4">Create your first habit to get started</p>
-              <Button onClick={onAddHabit} className="gap-2">
+              <Target className="h-10 sm:h-12 w-10 sm:w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-base sm:text-lg font-medium mb-2">No habits yet</h3>
+              <p className="text-muted-foreground mb-4 text-sm sm:text-base">Create your first habit to get started</p>
+              <Button onClick={onAddHabit} className="gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" />
                 Create Your First Habit
               </Button>
@@ -215,7 +217,8 @@ export function HabitsManagement({
                 <CardTitle>All Habits ({habits.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Habit</TableHead>
@@ -328,14 +331,15 @@ export function HabitsManagement({
                       )
                     })}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           )}
 
           {/* Cards View */}
           {viewMode === 'cards' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {habits.map(habit => {
                 const stats = getHabitStats(habit)
                 

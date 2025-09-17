@@ -238,13 +238,13 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardTitle className="flex items-center gap-2 text-center sm:text-left">
             <CheckCircle2 className="h-5 w-5" />
             Bulk Habit Logger
           </CardTitle>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-center gap-2">
             {/* Date Range Selector */}
             <div className="flex gap-1">
               {[7, 14, 30].map(days => (
@@ -253,6 +253,7 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
                   size="sm"
                   variant={dateRange === days ? 'default' : 'outline'}
                   onClick={() => setDateRange(days)}
+                  className="text-xs"
                 >
                   {days}d
                 </Button>
@@ -264,6 +265,7 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
               size="sm"
               variant={showInactiveHabits ? 'default' : 'outline'}
               onClick={() => setShowInactiveHabits(!showInactiveHabits)}
+              className="text-xs"
             >
               <Filter className="h-4 w-4 mr-1" />
               {showInactiveHabits ? 'All' : 'Active'}
@@ -272,17 +274,18 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
         </div>
         
         {/* Date Navigation */}
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4">
           <Button
             size="sm"
             variant="outline"
             onClick={() => navigateDates('prev')}
+            className="w-full sm:w-auto"
           >
             <ChevronLeft className="h-4 w-4" />
             Previous
           </Button>
           
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-muted-foreground text-center">
             {formatDate(dates[0], 'MMM dd')} - {formatDate(dates[dates.length - 1], 'MMM dd, yyyy')}
           </div>
           
@@ -291,6 +294,7 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
             variant="outline"
             onClick={() => navigateDates('next')}
             disabled={dates[dates.length - 1] >= new Date()}
+            className="w-full sm:w-auto"
           >
             Next
             <ChevronRight className="h-4 w-4" />
@@ -300,9 +304,9 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
 
       <CardContent>
         {filteredHabits.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-6 sm:py-8 px-4 text-muted-foreground">
             <Target className="h-8 w-8 mx-auto mb-2" />
-            <p>No {showInactiveHabits ? '' : 'active '}habits to display</p>
+            <p className="text-sm sm:text-base">No {showInactiveHabits ? '' : 'active '}habits to display</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -404,13 +408,22 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
                 })}
               </tbody>
             </table>
+            
+            {/* Mobile scroll hint */}
+            <div className="block sm:hidden text-xs text-muted-foreground text-center py-2 border-t">
+              <span className="flex items-center justify-center gap-1">
+                <span>←</span>
+                <span>Scroll horizontally to see more dates</span>
+                <span>→</span>
+              </span>
+            </div>
           </div>
         )}
 
         {/* Summary */}
         <div className="mt-4 pt-4 border-t">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
               <span>
                 Total: {filteredHabits.length} habits × {dates.length} days = {filteredHabits.length * dates.length} entries
               </span>
@@ -421,9 +434,10 @@ export function BulkHabitLogger({ habits, onHabitUpdate }: BulkHabitLoggerProps)
               </span>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center sm:justify-end gap-2">
               <Clock className="h-4 w-4" />
-              <span>Quick bulk logging for catch-up and planning</span>
+              <span className="hidden sm:inline">Quick bulk logging for catch-up and planning</span>
+              <span className="sm:hidden">Bulk logging</span>
             </div>
           </div>
         </div>

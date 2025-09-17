@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { AggregatedHabitHeatmap } from '../habits/aggregated-habit-heatmap'
+import { FinanceOverview } from '../finance/finance-overview'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppState } from '@/types'
@@ -10,9 +11,10 @@ import { formatDate } from '@/lib/utils'
 interface DashboardViewProps {
   data: AppState
   onQuickAction: (action: string) => void
+  onNavigateToFinance: () => void
 }
 
-export function DashboardView({ data, onQuickAction }: DashboardViewProps) {
+export function DashboardView({ data, onQuickAction, onNavigateToFinance }: DashboardViewProps) {
   // State for heatmap
   const [selectedHabits, setSelectedHabits] = useState<string[]>([])
   
@@ -36,6 +38,13 @@ export function DashboardView({ data, onQuickAction }: DashboardViewProps) {
         </p>
       </div> */}
 
+      {/* Finance Overview */}
+      <FinanceOverview 
+        transactions={data.transactions || []}
+        savingsGoals={data.savingsGoals || []}
+        onNavigateToFinance={onNavigateToFinance}
+      />
+
       {/* Main Focus: Habits Heatmap */}
       {data.habits.length > 0 ? (
         <div className="pt-8">
@@ -47,9 +56,9 @@ export function DashboardView({ data, onQuickAction }: DashboardViewProps) {
         />
         </div>
       ) : (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">No habits found. Start by creating your first habit!</p>
-          <Button onClick={() => onQuickAction('add-habit')} className="gap-2">
+        <div className="text-center py-8 sm:py-12 px-4">
+          <p className="text-muted-foreground mb-4 text-sm sm:text-base">No habits found. Start by creating your first habit!</p>
+          <Button onClick={() => onQuickAction('add-habit')} className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             Create First Habit
           </Button>
