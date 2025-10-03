@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -27,7 +27,10 @@ export function AggregatedHabitHeatmap({
 }: AggregatedHabitHeatmapProps) {
   const [isHabitsExpanded, setIsHabitsExpanded] = useState(false)
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null)
+  const [hoveredDayData, setHoveredDayData] = useState<any | null>(null)
+  const [hoveredPosition, setHoveredPosition] = useState<{ x: number; y: number } | null>(null)
   const [filteredHabitId, setFilteredHabitId] = useState<string | null>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
 
   // Icon mapping for habits
   const getHabitIcon = (habitName: string) => {
@@ -506,7 +509,7 @@ export function AggregatedHabitHeatmap({
                 </div>
 
                 {/* Contribution squares grid with fixed width */}
-                <div className="flex gap-1" style={{ width: '848px' }}>
+                <div className="flex gap-1" style={{ width: '848px' }} ref={gridRef}>
                   {/* Generate 53 weeks */}
                   {Array.from({ length: 53 }, (_, weekIndex) => (
                     <div key={weekIndex} className="flex flex-col gap-1 w-4 flex-shrink-0">
@@ -532,49 +535,29 @@ export function AggregatedHabitHeatmap({
                           return <div key={dayIndex} className="w-4 h-4 bg-transparent flex-shrink-0" />
                         }
 
-                        const tooltipContent = dayData
-                          ? `${formatDate(currentDate, 'MMM dd, yyyy')}\n${dayData.completedCount}/${dayData.totalHabits} habits completed (${dayData.completionRate.toFixed(1)}%)${
-                              dayData.habitDetails.length > 0 ? `\n\nHabits:\n${dayData.habitDetails.map(h => `${h.completed ? '[\u2713]' : '[\u2717]'} ${h.name}`).join('\n')}` : ''
-                            }${
-                              dayData.notes.length > 0 ? `\n\nNotes:\n${dayData.notes.join('\n')}` : ''
-                            }`
-                          : `${formatDate(currentDate, 'MMM dd, yyyy')}\nNo data`
-
                         return (
                           <div
                             key={dayIndex}
                             className={`w-4 h-4 rounded-sm cursor-pointer transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-primary hover:ring-offset-1 hover:shadow-lg relative group flex-shrink-0 ${
                               dayData ? getIntensityClass(dayData.completionRate) : 'bg-transparent'
                             }`}
-                            title={tooltipContent}
-                            onMouseEnter={() => setHoveredDay(currentDate)}
-                            onMouseLeave={() => setHoveredDay(null)}
+                            onMouseEnter={e => {
+                              setHoveredDay(currentDate)
+                              setHoveredDayData(dayData)
+                              // Get bounding rect relative to viewport
+                              const rect = (e.target as HTMLElement).getBoundingClientRect()
+                              setHoveredPosition({
+                                x: rect.left + rect.width / 2,
+                                y: rect.top // top of the cell
+                              })
+                            }}
+                            onMouseLeave={() => {
+                              setHoveredDay(null)
+                              setHoveredDayData(null)
+                              setHoveredPosition(null)
+                            }}
                           >
-                            {/* Enhanced Tooltip */}
-                            {hoveredDay && hoveredDay.getTime() === currentDate.getTime() && dayData && (
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                <div className="font-semibold">{formatDate(currentDate, 'MMM dd, yyyy')}</div>
-                                <div className="text-gray-300">
-                                  {dayData.completedCount}/{dayData.totalHabits} habits ({dayData.completionRate.toFixed(1)}%)
-                                </div>
-                                {dayData.habitDetails.length > 0 && (
-                                  <div className="mt-1 space-y-0.5">
-                                    {dayData.habitDetails.slice(0, 3).map((habit, idx) => (
-                                      <div key={idx} className="flex items-center gap-1 text-xs">
-                                        <span className={habit.completed ? 'text-green-400' : 'text-red-400'}>
-                                          {habit.completed ? '\u2713' : '\u2717'}
-                                        </span>
-                                        <span>{habit.name}</span>
-                                      </div>
-                                    ))}
-                                    {dayData.habitDetails.length > 3 && (
-                                      <div className="text-xs text-gray-400">+{dayData.habitDetails.length - 3} more</div>
-                                    )}
-                                  </div>
-                                )}
-                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
-                              </div>
-                            )}
+                            {/* No per-cell modal */}
                           </div>
                         )
                       })}
@@ -638,6 +621,42 @@ export function AggregatedHabitHeatmap({
           </div>
         </div>
       </CardContent>
+      {/* Single global modal rendered outside the grid */}
+      {hoveredDay && hoveredDayData && hoveredPosition && (
+        <div
+          style={{
+            position: 'fixed',
+            left: hoveredPosition.x,
+            top: hoveredPosition.y - 12, // 12px above the cell
+            transform: 'translate(-50%, -100%)',
+            zIndex: 9999,
+            pointerEvents: 'none',
+            minWidth: 220,
+            maxWidth: 320,
+          }}
+          className="px-3 py-2 bg-black text-white text-xs rounded-lg shadow-lg"
+        >
+          <div className="font-semibold">{formatDate(hoveredDay, 'MMM dd, yyyy')}</div>
+          <div className="text-gray-300">
+            {hoveredDayData.completedCount}/{hoveredDayData.totalHabits} habits ({hoveredDayData.completionRate.toFixed(1)}%)
+          </div>
+          {hoveredDayData.habitDetails.length > 0 && (
+            <div className="mt-1 space-y-0.5">
+              {hoveredDayData.habitDetails.slice(0, 3).map((habit: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-1 text-xs">
+                  <span className={habit.completed ? 'text-green-400' : 'text-red-400'}>
+                    {habit.completed ? '\u2713' : '\u2717'}
+                  </span>
+                  <span>{habit.name}</span>
+                </div>
+              ))}
+              {hoveredDayData.habitDetails.length > 3 && (
+                <div className="text-xs text-gray-400">+{hoveredDayData.habitDetails.length - 3} more</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   )
 }
