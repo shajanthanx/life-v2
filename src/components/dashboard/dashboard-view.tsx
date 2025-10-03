@@ -38,12 +38,7 @@ export function DashboardView({ data, onQuickAction, onNavigateToFinance }: Dash
         </p>
       </div> */}
 
-      {/* Finance Overview */}
-      <FinanceOverview 
-        transactions={data.transactions || []}
-        savingsGoals={data.savingsGoals || []}
-        onNavigateToFinance={onNavigateToFinance}
-      />
+      
 
       {/* Main Focus: Habits Heatmap */}
       {data.habits.length > 0 ? (
@@ -64,6 +59,13 @@ export function DashboardView({ data, onQuickAction, onNavigateToFinance }: Dash
           </Button>
         </div>
       )}
+
+      {/* Finance Overview */}
+      <FinanceOverview 
+        transactions={data.transactions || []}
+        savingsGoals={data.savingsGoals || []}
+        onNavigateToFinance={onNavigateToFinance}
+      />
 
     </div>
   )
