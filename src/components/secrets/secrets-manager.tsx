@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Secret } from '@/types'
-import { Shield, Eye, EyeOff, Plus, Lock, Copy, Key, CreditCard, Building, Smartphone } from 'lucide-react'
+import { Shield, Eye, EyeOff, Plus, Lock, Copy, Key, CreditCard, Building, Smartphone, Trash2, Edit } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 interface SecretsManagerProps {
@@ -19,7 +19,9 @@ interface SecretsManagerProps {
 
 export function SecretsManager({ secrets, onAddSecret, onUpdateSecret, onDeleteSecret }: SecretsManagerProps) {
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [selectedSecret, setSelectedSecret] = useState<Secret | null>(null)
+  const [editingSecret, setEditingSecret] = useState<Secret | null>(null)
   const [showPasswords, setShowPasswords] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState('')
   const { addToast } = useToast()
@@ -68,10 +70,59 @@ export function SecretsManager({ secrets, onAddSecret, onUpdateSecret, onDeleteS
       notes: '',
       customFields: []
     })
-    
-    addToast({
-      type: 'success',
-      message: 'Secret saved securely!'
+  }
+
+  const openEditModal = (secret: Secret) => {
+    setEditingSecret(secret)
+    setFormData({
+      title: secret.title,
+      type: secret.type,
+      website: secret.website || '',
+      username: secret.username || '',
+      password: secret.password,
+      notes: secret.notes || '',
+      customFields: secret.customFields || []
+    })
+    setShowEditModal(true)
+    setSelectedSecret(null) // Close view details modal
+  }
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!formData.title.trim() || !formData.password.trim()) {
+      addToast({
+        type: 'error',
+        message: 'Please fill in title and password'
+      })
+      return
+    }
+
+    if (!editingSecret) return
+
+    const updatedSecret: Secret = {
+      ...editingSecret,
+      title: formData.title,
+      type: formData.type,
+      website: formData.website || undefined,
+      username: formData.username || undefined,
+      password: formData.password,
+      notes: formData.notes || undefined,
+      customFields: formData.customFields.filter(f => f.key && f.value),
+      lastAccessed: new Date()
+    }
+
+    onUpdateSecret(updatedSecret)
+    setShowEditModal(false)
+    setEditingSecret(null)
+    setFormData({
+      title: '',
+      type: 'password',
+      website: '',
+      username: '',
+      password: '',
+      notes: '',
+      customFields: []
     })
   }
 
@@ -442,6 +493,301 @@ export function SecretsManager({ secrets, onAddSecret, onUpdateSecret, onDeleteS
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Secret Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Secret</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Title</label>
+              <Input
+                placeholder="e.g., Gmail Account, Bank Login"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Type</label>
+              <select
+                className="w-full p-2 border rounded-md"
+                value={formData.type}
+                onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as Secret['type'] }))}
+              >
+                <option value="password">Password</option>
+                <option value="credit_card">Credit Card</option>
+                <option value="bank_account">Bank Account</option>
+                <option value="identity">Identity Document</option>
+                <option value="secure_note">Secure Note</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Website/Service (Optional)</label>
+              <Input
+                type="url"
+                placeholder="https://example.com"
+                value={formData.website}
+                onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Username/Email (Optional)</label>
+              <Input
+                placeholder="user@example.com"
+                value={formData.username}
+                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Password/Secret</label>
+              <Input
+                type="password"
+                placeholder="Enter password or secret"
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Custom Fields (Optional)</label>
+              {formData.customFields.map((field, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <Input
+                    placeholder="Key"
+                    value={field.key}
+                    onChange={(e) => {
+                      const newFields = [...formData.customFields]
+                      newFields[index].key = e.target.value
+                      setFormData(prev => ({ ...prev, customFields: newFields }))
+                    }}
+                  />
+                  <Input
+                    placeholder="Value"
+                    value={field.value}
+                    onChange={(e) => {
+                      const newFields = [...formData.customFields]
+                      newFields[index].value = e.target.value
+                      setFormData(prev => ({ ...prev, customFields: newFields }))
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const newFields = formData.customFields.filter((_, i) => i !== index)
+                      setFormData(prev => ({ ...prev, customFields: newFields }))
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    customFields: [...prev.customFields, { key: '', value: '' }]
+                  }))
+                }}
+              >
+                + Add Field
+              </Button>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Notes (Optional)</label>
+              <textarea
+                className="w-full p-2 border rounded-md min-h-[100px]"
+                placeholder="Additional notes or information"
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => {
+                setShowEditModal(false)
+                setEditingSecret(null)
+              }}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Update Secret
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Details Modal */}
+      <Dialog open={!!selectedSecret} onOpenChange={() => setSelectedSecret(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedSecret && getTypeIcon(selectedSecret.type)}
+              {selectedSecret?.title}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedSecret && (
+            <div className="space-y-4">
+              {/* Type Badge */}
+              <div>
+                <Badge className={getTypeColor(selectedSecret.type)}>
+                  {selectedSecret.type.replace('_', ' ')}
+                </Badge>
+              </div>
+
+              {/* Website */}
+              {selectedSecret.website && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Website/Service</label>
+                  <div className="flex items-center justify-between mt-1 p-2 bg-muted rounded-md">
+                    <span className="text-sm">{selectedSecret.website}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(selectedSecret.website!, 'Website')}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Username */}
+              {selectedSecret.username && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Username/Email</label>
+                  <div className="flex items-center justify-between mt-1 p-2 bg-muted rounded-md">
+                    <span className="text-sm font-mono">{selectedSecret.username}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(selectedSecret.username!, 'Username')}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Password */}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Password/Secret</label>
+                <div className="flex items-center justify-between mt-1 p-2 bg-muted rounded-md">
+                  <span className="text-sm font-mono">
+                    {showPasswords.has(selectedSecret.id) ? selectedSecret.password : '••••••••••••'}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => togglePasswordVisibility(selectedSecret.id)}
+                    >
+                      {showPasswords.has(selectedSecret.id) ? (
+                        <EyeOff className="h-3 w-3" />
+                      ) : (
+                        <Eye className="h-3 w-3" />
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(selectedSecret.password, 'Password')}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom Fields */}
+              {selectedSecret.customFields && selectedSecret.customFields.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Custom Fields</label>
+                  <div className="space-y-2 mt-1">
+                    {selectedSecret.customFields.map((field, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                        <div>
+                          <div className="text-xs text-muted-foreground">{field.key}</div>
+                          <div className="text-sm font-mono">{field.value}</div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => copyToClipboard(field.value, field.key)}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedSecret.notes && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                  <div className="mt-1 p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
+                    {selectedSecret.notes}
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata */}
+              <div className="pt-4 border-t space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Created:</span>
+                  <span>{new Date(selectedSecret.createdAt).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Last Accessed:</span>
+                  <span>{new Date(selectedSecret.lastAccessed).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => openEditModal(selectedSecret!)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirm('Are you sure you want to delete this secret? This action cannot be undone.')) {
+                  onDeleteSecret(selectedSecret!.id)
+                  setSelectedSecret(null)
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+            <Button variant="outline" onClick={() => setSelectedSecret(null)}>
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

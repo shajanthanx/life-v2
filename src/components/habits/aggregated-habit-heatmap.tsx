@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Filter, CheckCircle2, Calendar, Activity, Download, Share2, Droplets, Brain, Bed, Dumbbell, Utensils, BookOpen, Coffee } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Filter, CheckCircle2, Calendar, Activity, Download, Share2, Droplets, Brain, Bed, Dumbbell, Utensils, BookOpen, Coffee, BarChart3, TrendingUp } from 'lucide-react'
 import { Habit, HabitRecord } from '@/types'
 import { formatDate } from '@/lib/utils'
-import { startOfYear, endOfYear, eachDayOfInterval, format, isSameDay } from 'date-fns'
+import { startOfYear, endOfYear, eachDayOfInterval, format, isSameDay, subDays } from 'date-fns'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 
 interface AggregatedHabitHeatmapProps {
   habits: Habit[]
@@ -18,9 +20,9 @@ interface AggregatedHabitHeatmapProps {
   onYearChange?: (year: number) => void
 }
 
-export function AggregatedHabitHeatmap({ 
-  habits, 
-  selectedHabits, 
+export function AggregatedHabitHeatmap({
+  habits,
+  selectedHabits,
   year = new Date().getFullYear(),
   onSelectAllHabits,
   onYearChange
@@ -31,6 +33,7 @@ export function AggregatedHabitHeatmap({
   const [hoveredDayData, setHoveredDayData] = useState<any | null>(null)
   const [hoveredPosition, setHoveredPosition] = useState<{ x: number; y: number } | null>(null)
   const [filteredHabitId, setFilteredHabitId] = useState<string | null>(null)
+  const [completionDateRange, setCompletionDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
   const gridRef = useRef<HTMLDivElement>(null)
 
   // Icon mapping for habits
@@ -164,6 +167,45 @@ export function AggregatedHabitHeatmap({
   const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   // Empty state when no habits are selected
+  // Calculate daily completion rate data
+  const dailyCompletionData = useMemo(() => {
+    const days = completionDateRange === '7d' ? 7 : completionDateRange === '30d' ? 30 : completionDateRange === '90d' ? 90 : 365
+    const endDate = new Date()
+    const startDate = subDays(endDate, days - 1)
+
+    const dateMap = new Map<string, { date: string; completionRate: number; completed: number; total: number }>()
+
+    // Initialize all dates
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateKey = format(d, 'MMM dd')
+      dateMap.set(dateKey, {
+        date: dateKey,
+        completionRate: 0,
+        completed: 0,
+        total: 0
+      })
+    }
+
+    // Populate with actual data
+    activeHabits.forEach(habit => {
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateKey = format(d, 'MMM dd')
+        const dayData = dateMap.get(dateKey)
+
+        if (dayData) {
+          dayData.total++
+          const record = habit.records.find(r => isSameDay(new Date(r.date), d))
+          if (record?.isCompleted) {
+            dayData.completed++
+          }
+          dayData.completionRate = dayData.total > 0 ? (dayData.completed / dayData.total) * 100 : 0
+        }
+      }
+    })
+
+    return Array.from(dateMap.values())
+  }, [activeHabits, completionDateRange])
+
   if (selectedHabits.length === 0) {
     return (
       <Card className="w-full">
@@ -233,7 +275,21 @@ export function AggregatedHabitHeatmap({
           </div>
         </div>
 
-        {/* Progress Summary at Top */}
+        {/* Tabs for Heatmap and Completion Rate */}
+        <Tabs defaultValue="heatmap" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="heatmap" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Heatmap
+            </TabsTrigger>
+            <TabsTrigger value="completion" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Daily Completion Rate
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="heatmap" className="space-y-6">
+            {/* Progress Summary at Top */}
         <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 sm:p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h3 className="text-lg font-semibold text-gray-800 text-center sm:text-left">Progress Summary</h3>
@@ -655,6 +711,90 @@ export function AggregatedHabitHeatmap({
             )}
           </div>
         </div>
+          </TabsContent>
+
+          <TabsContent value="completion" className="space-y-6">
+            {/* Date Range Selector */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Daily Completion Rate</h3>
+              <div className="flex gap-2">
+                {['7d', '30d', '90d', '1y'].map((range) => (
+                  <Button
+                    key={range}
+                    variant={completionDateRange === range ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCompletionDateRange(range as any)}
+                  >
+                    {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : range === '90d' ? '90 Days' : '1 Year'}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Completion Rate Chart */}
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[600px] md:min-w-full">
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart
+                    data={dailyCompletionData}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorCompletion" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis
+                      label={{ value: 'Completion Rate (%)', angle: -90, position: 'insideLeft' }}
+                      domain={[0, 100]}
+                    />
+                    <RechartsTooltip
+                      formatter={(value: any) => [`${Number(value).toFixed(1)}%`, 'Completion Rate']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="completionRate"
+                      stroke="#8884d8"
+                      fillOpacity={1}
+                      fill="url(#colorCompletion)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Stats Summary */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Average</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  {(dailyCompletionData.reduce((sum, d) => sum + d.completionRate, 0) / dailyCompletionData.length).toFixed(1)}%
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Peak</p>
+                <p className="text-2xl font-bold text-green-700">
+                  {Math.max(...dailyCompletionData.map(d => d.completionRate)).toFixed(1)}%
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Total Days</p>
+                <p className="text-2xl font-bold text-purple-700">
+                  {dailyCompletionData.length}
+                </p>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
       {/* Single global modal rendered outside the grid */}
       {hoveredDay && hoveredDayData && hoveredPosition && (

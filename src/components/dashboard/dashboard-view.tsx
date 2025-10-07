@@ -12,9 +12,10 @@ interface DashboardViewProps {
   data: AppState
   onQuickAction: (action: string) => void
   onNavigateToFinance: () => void
+  onAddTransaction: (transaction: any) => void
 }
 
-export function DashboardView({ data, onQuickAction, onNavigateToFinance }: DashboardViewProps) {
+export function DashboardView({ data, onQuickAction, onNavigateToFinance, onAddTransaction }: DashboardViewProps) {
   // State for heatmap
   const [selectedHabits, setSelectedHabits] = useState<string[]>([])
   
@@ -61,10 +62,11 @@ export function DashboardView({ data, onQuickAction, onNavigateToFinance }: Dash
       )}
 
       {/* Finance Overview */}
-      <FinanceOverview 
+      <FinanceOverview
         transactions={data.transactions || []}
         savingsGoals={data.savingsGoals || []}
         onNavigateToFinance={onNavigateToFinance}
+        onAddTransaction={onAddTransaction}
       />
 
     </div>

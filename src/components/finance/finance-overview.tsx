@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { TrendingUp, TrendingDown, DollarSign, PiggyBank, ArrowRight } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { TrendingUp, TrendingDown, DollarSign, PiggyBank, ArrowRight, Plus } from 'lucide-react'
 import { Transaction, SavingsGoal } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
@@ -12,9 +13,21 @@ interface FinanceOverviewProps {
   transactions: Transaction[]
   savingsGoals: SavingsGoal[]
   onNavigateToFinance: () => void
+  onAddTransaction: (transaction: Omit<Transaction, 'id'>) => void
 }
 
-export function FinanceOverview({ transactions, savingsGoals, onNavigateToFinance }: FinanceOverviewProps) {
+export function FinanceOverview({ transactions, savingsGoals, onNavigateToFinance, onAddTransaction }: FinanceOverviewProps) {
+  const [quickLog, setQuickLog] = useState({
+    amount: '',
+    description: '',
+    category: '',
+    date: new Date().toISOString().split('T')[0],
+    type: 'expense' as 'income' | 'expense'
+  })
+
+  // Common categories
+  const expenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other']
+  const incomeCategories = ['Salary', 'Freelance', 'Investment', 'Business', 'Gift', 'Other']
   // Calculate total balance and current month's data
   const financialData = useMemo(() => {
     const now = new Date()
@@ -53,21 +66,33 @@ export function FinanceOverview({ transactions, savingsGoals, onNavigateToFinanc
     }
   }, [transactions])
 
-  // Calculate savings overview
-  const savingsOverview = useMemo(() => {
-    const totalSaved = savingsGoals.reduce((sum, goal) => sum + goal.currentAmount, 0)
-    const totalTargets = savingsGoals.reduce((sum, goal) => sum + goal.targetAmount, 0)
-    const completedGoals = savingsGoals.filter(goal => goal.isCompleted).length
-    const progress = totalTargets > 0 ? (totalSaved / totalTargets) * 100 : 0
-    
-    return {
-      totalSaved,
-      totalTargets,
-      completedGoals,
-      progress,
-      activeGoals: savingsGoals.length - completedGoals
+  const handleQuickLog = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!quickLog.amount || !quickLog.description || !quickLog.category) {
+      return
     }
-  }, [savingsGoals])
+
+    const newTransaction: Omit<Transaction, 'id'> = {
+      type: quickLog.type,
+      amount: parseFloat(quickLog.amount),
+      category: quickLog.category,
+      description: quickLog.description,
+      date: new Date(quickLog.date),
+      isRecurring: false
+    }
+
+    onAddTransaction(newTransaction)
+
+    // Reset form
+    setQuickLog({
+      amount: '',
+      description: '',
+      category: '',
+      date: new Date().toISOString().split('T')[0],
+      type: 'expense'
+    })
+  }
 
   const hasData = transactions.length > 0 || savingsGoals.length > 0
 
@@ -163,53 +188,110 @@ export function FinanceOverview({ transactions, savingsGoals, onNavigateToFinanc
             </div>
           </div>
 
-          {/* Savings Overview */}
+          {/* Quick Log */}
           <div className="space-y-4">
             <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-              🎯 Savings Goals
+              ⚡ Quick Log
             </h4>
-            
-            {savingsGoals.length > 0 ? (
-              <div className="space-y-3">
-                {/* Total Progress */}
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-purple-800">Total Progress</span>
-                    <span className="text-lg font-bold text-purple-700">{savingsOverview.progress.toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-purple-200 rounded-full h-2 mb-2">
-                    <div 
-                      className="bg-gradient-to-r from-purple-400 to-indigo-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(savingsOverview.progress, 100)}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-purple-600">
-                    <span>{formatCurrency(savingsOverview.totalSaved)}</span>
-                    <span>{formatCurrency(savingsOverview.totalTargets)}</span>
+
+            <form onSubmit={handleQuickLog} className="space-y-3">
+              {/* Type Toggle */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickLog(prev => ({ ...prev, type: 'income', category: '' }))}
+                  className={`p-3 rounded-lg border-2 transition-all font-medium text-sm ${
+                    quickLog.type === 'income'
+                      ? 'bg-green-50 border-green-500 text-green-700'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <TrendingUp className="h-4 w-4 mx-auto mb-1" />
+                  Income
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickLog(prev => ({ ...prev, type: 'expense', category: '' }))}
+                  className={`p-3 rounded-lg border-2 transition-all font-medium text-sm ${
+                    quickLog.type === 'expense'
+                      ? 'bg-red-50 border-red-500 text-red-700'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <TrendingDown className="h-4 w-4 mx-auto mb-1" />
+                  Expense
+                </button>
+              </div>
+
+              {/* Amount and Date Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">Amount</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={quickLog.amount}
+                      onChange={(e) => setQuickLog(prev => ({ ...prev, amount: e.target.value }))}
+                      className="pl-10"
+                      required
+                    />
                   </div>
                 </div>
-                
-                {/* Goal Stats */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="text-center p-2 sm:p-3 bg-green-50 rounded-lg border border-green-100">
-                    <div className="text-lg sm:text-xl font-bold text-green-700">{savingsOverview.completedGoals}</div>
-                    <div className="text-xs text-green-600">Completed</div>
-                  </div>
-                  <div className="text-center p-2 sm:p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="text-lg sm:text-xl font-bold text-blue-700">{savingsOverview.activeGoals}</div>
-                    <div className="text-xs text-blue-600">Active</div>
-                  </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">Date</label>
+                  <Input
+                    type="date"
+                    value={quickLog.date}
+                    onChange={(e) => setQuickLog(prev => ({ ...prev, date: e.target.value }))}
+                    required
+                  />
                 </div>
               </div>
-            ) : (
-              <div className="p-4 border-2 border-dashed border-gray-200 rounded-lg text-center">
-                <PiggyBank className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-2">No savings goals yet</p>
-                <Button variant="outline" size="sm" onClick={onNavigateToFinance}>
-                  Create Goal
-                </Button>
+
+              {/* Category Selector */}
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">Category</label>
+                <select
+                  value={quickLog.category}
+                  onChange={(e) => setQuickLog(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select category</option>
+                  {(quickLog.type === 'expense' ? expenseCategories : incomeCategories).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
-            )}
+
+              {/* Description Input */}
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">Description</label>
+                <Input
+                  type="text"
+                  placeholder="What's this for?"
+                  value={quickLog.description}
+                  onChange={(e) => setQuickLog(prev => ({ ...prev, description: e.target.value }))}
+                  required
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className={`w-full gap-2 ${
+                  quickLog.type === 'income'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                <Plus className="h-4 w-4" />
+                Add {quickLog.type === 'income' ? 'Income' : 'Expense'}
+              </Button>
+            </form>
           </div>
         </div>
 

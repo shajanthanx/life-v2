@@ -44,6 +44,7 @@ import { createVisualization } from '@/lib/api/visualizations'
 import { createMemory } from '@/lib/api/memories'
 import { createProgressPhoto, updateProgressPhoto, deleteProgressPhoto } from '@/lib/api/progress-photos'
 import { createSleepRecord, createExerciseRecord, createNutritionRecord } from '@/lib/api/health'
+import { createSecret, updateSecret, deleteSecret } from '@/lib/api/secrets'
 import { createBook } from '@/lib/api/books'
 import { createMovie } from '@/lib/api/movies'
 import { AuthDebug } from './auth-debug'
@@ -479,10 +480,26 @@ function AppContent() {
       case 'dashboard':
         return (
           <div>
-            <DashboardView 
-              data={appData} 
+            <DashboardView
+              data={appData}
               onQuickAction={handleQuickAction}
               onNavigateToFinance={() => setActiveView('finance')}
+              onAddTransaction={async (transaction) => {
+                const result = await createTransaction(transaction)
+                if (result.error) {
+                  addToast({
+                    type: 'error',
+                    title: 'Error',
+                    message: result.error
+                  })
+                } else {
+                  await reloadData()
+                  addToast({
+                    type: 'success',
+                    message: 'Transaction added successfully!'
+                  })
+                }
+              }}
             />
           </div>
         )
@@ -604,20 +621,53 @@ function AppContent() {
         return (
           <SecretsManager
             secrets={appData.secrets}
-            onAddSecret={(secret) => {
-              const newSecret = { ...secret, id: Date.now().toString() }
-              handleDataUpdate({
-                ...appData,
-                secrets: [...appData.secrets, newSecret]
-              })
+            onAddSecret={async (secret) => {
+              const result = await createSecret(secret)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else {
+                await reloadData()
+                addToast({
+                  type: 'success',
+                  message: 'Secret saved securely!'
+                })
+              }
             }}
-            onUpdateSecret={(secret) => {
-              const updated = appData.secrets.map(s => s.id === secret.id ? secret : s)
-              handleDataUpdate({ ...appData, secrets: updated })
+            onUpdateSecret={async (secret) => {
+              const result = await updateSecret(secret.id, secret)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else {
+                await reloadData()
+                addToast({
+                  type: 'success',
+                  message: 'Secret updated successfully!'
+                })
+              }
             }}
-            onDeleteSecret={(id) => {
-              const updated = appData.secrets.filter(s => s.id !== id)
-              handleDataUpdate({ ...appData, secrets: updated })
+            onDeleteSecret={async (id) => {
+              const result = await deleteSecret(id)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else {
+                await reloadData()
+                addToast({
+                  type: 'success',
+                  message: 'Secret deleted successfully!'
+                })
+              }
             }}
           />
         )
@@ -749,10 +799,26 @@ function AppContent() {
         )
       default:
         return (
-          <DashboardView 
-            data={appData} 
+          <DashboardView
+            data={appData}
             onQuickAction={handleQuickAction}
             onNavigateToFinance={() => setActiveView('finance')}
+            onAddTransaction={async (transaction) => {
+              const result = await createTransaction(transaction)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else {
+                await reloadData()
+                addToast({
+                  type: 'success',
+                  message: 'Transaction added successfully!'
+                })
+              }
+            }}
           />
         )
     }
