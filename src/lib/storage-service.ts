@@ -82,6 +82,33 @@ export async function deleteImage(bucket: string, path: string): Promise<{ succe
   }
 }
 
+export async function getSignedUrl(bucket: string, path: string, expiresIn: number = 3600): Promise<{ url: string | null; error: string | null }> {
+  try {
+    const userId = authService.getUserId()
+    if (!userId) {
+      return { url: null, error: 'Not authenticated' }
+    }
+
+    // Check if the path belongs to the current user
+    if (!path.startsWith(userId)) {
+      return { url: null, error: 'Access denied' }
+    }
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, expiresIn)
+
+    if (error) {
+      return { url: null, error: error.message }
+    }
+
+    return { url: data.signedUrl, error: null }
+
+  } catch (error) {
+    return { url: null, error: 'Failed to generate signed URL' }
+  }
+}
+
 // Storage bucket names
 export const STORAGE_BUCKETS = {
   AVATARS: 'avatars',

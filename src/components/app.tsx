@@ -42,7 +42,7 @@ import { createTransaction } from '@/lib/api/transactions'
 import { createSavingsGoal } from '@/lib/api/savings-goals'
 import { createVisualization } from '@/lib/api/visualizations'
 import { createMemory } from '@/lib/api/memories'
-import { createProgressPhoto } from '@/lib/api/progress-photos'
+import { createProgressPhoto, updateProgressPhoto, deleteProgressPhoto } from '@/lib/api/progress-photos'
 import { createSleepRecord, createExerciseRecord, createNutritionRecord } from '@/lib/api/health'
 import { createBook } from '@/lib/api/books'
 import { createMovie } from '@/lib/api/movies'
@@ -678,10 +678,37 @@ function AppContent() {
                 })
               }
             }}
-            onUpdatePhoto={(photo) => {
-              // TODO: Implement updateProgressPhoto API call
-              const updated = appData.progressPhotos.map(p => p.id === photo.id ? photo : p)
-              handleDataUpdate({ ...appData, progressPhotos: updated })
+            onUpdatePhoto={async (photo) => {
+              const result = await updateProgressPhoto(photo.id, photo)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else if (result.data) {
+                await reloadData()
+                addToast({
+                  type: 'success',
+                  message: 'Progress photo updated successfully!'
+                })
+              }
+            }}
+            onDeletePhoto={async (id) => {
+              const result = await deleteProgressPhoto(id)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else {
+                await reloadData()
+                addToast({
+                  type: 'success',
+                  message: 'Progress photo deleted successfully!'
+                })
+              }
             }}
           />
         )

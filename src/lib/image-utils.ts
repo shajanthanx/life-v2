@@ -50,27 +50,31 @@ export function compressImage(file: File, maxWidth: number = 800, quality: numbe
   })
 }
 
-export async function uploadImageFile(file: File, bucket: string, folder?: string): Promise<{ url: string | null; error: string | null }> {
+export async function uploadImageFile(file: File, bucket: string, folder?: string): Promise<{ url: string | null; path: string | null; error: string | null }> {
   try {
     // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      return { url: null, error: 'File too large. Please select an image under 5MB.' }
+      return { url: null, path: null, error: 'File too large. Please select an image under 5MB.' }
     }
 
     // Compress the image
     const compressedFile = await compressImage(file, 1200, 0.8)
-    
+
     // Upload to Supabase Storage
     const result = await uploadImage(compressedFile, bucket, folder)
-    
+
     if (result.error) {
-      return { url: null, error: result.error }
+      return { url: null, path: null, error: result.error }
     }
 
-    return { url: result.data?.url || null, error: null }
+    return {
+      url: result.data?.url || null,
+      path: result.data?.path || null,
+      error: null
+    }
 
   } catch (error) {
-    return { url: null, error: 'Failed to upload image' }
+    return { url: null, path: null, error: 'Failed to upload image' }
   }
 }
 
@@ -101,27 +105,27 @@ export function handleImageUpload(
 }
 
 // Helper functions for specific image types
-export async function uploadJournalImage(file: File): Promise<{ url: string | null; error: string | null }> {
+export async function uploadJournalImage(file: File): Promise<{ url: string | null; path: string | null; error: string | null }> {
   return uploadImageFile(file, STORAGE_BUCKETS.JOURNAL_IMAGES)
 }
 
-export async function uploadExercisePhoto(file: File): Promise<{ url: string | null; error: string | null }> {
+export async function uploadExercisePhoto(file: File): Promise<{ url: string | null; path: string | null; error: string | null }> {
   return uploadImageFile(file, STORAGE_BUCKETS.EXERCISE_PHOTOS)
 }
 
-export async function uploadProgressPhoto(file: File): Promise<{ url: string | null; error: string | null }> {
+export async function uploadProgressPhoto(file: File): Promise<{ url: string | null; path: string | null; error: string | null }> {
   return uploadImageFile(file, STORAGE_BUCKETS.PROGRESS_PHOTOS)
 }
 
-export async function uploadMemoryImage(file: File): Promise<{ url: string | null; error: string | null }> {
+export async function uploadMemoryImage(file: File): Promise<{ url: string | null; path: string | null; error: string | null }> {
   return uploadImageFile(file, STORAGE_BUCKETS.MEMORIES)
 }
 
-export async function uploadVisualizationImage(file: File): Promise<{ url: string | null; error: string | null }> {
+export async function uploadVisualizationImage(file: File): Promise<{ url: string | null; path: string | null; error: string | null }> {
   return uploadImageFile(file, STORAGE_BUCKETS.VISUALIZATIONS)
 }
 
-export async function uploadAvatar(file: File): Promise<{ url: string | null; error: string | null }> {
+export async function uploadAvatar(file: File): Promise<{ url: string | null; path: string | null; error: string | null }> {
   return uploadImageFile(file, STORAGE_BUCKETS.AVATARS)
 }
 

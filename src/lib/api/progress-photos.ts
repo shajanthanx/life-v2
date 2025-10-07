@@ -1,6 +1,7 @@
 import { supabase } from '../supabase'
 import { ProgressPhoto } from '@/types'
 import { authService } from '../auth'
+import { deleteImage, STORAGE_BUCKETS } from '../storage-service'
 
 export async function createProgressPhoto(photoData: Omit<ProgressPhoto, 'id'>): Promise<{ data: ProgressPhoto | null; error: string | null }> {
   try {
@@ -95,6 +96,19 @@ export async function deleteProgressPhoto(id: string): Promise<{ success: boolea
       return { success: false, error: 'Not authenticated' }
     }
 
+    // First, get the photo to retrieve the image path
+    const { data: photo, error: fetchError } = await supabase
+      .from('progress_photos')
+      .select('image_url')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single()
+
+    if (fetchError) {
+      return { success: false, error: fetchError.message }
+    }
+
+    // Delete from database
     const { error } = await supabase
       .from('progress_photos')
       .delete()
@@ -103,6 +117,11 @@ export async function deleteProgressPhoto(id: string): Promise<{ success: boolea
 
     if (error) {
       return { success: false, error: error.message }
+    }
+
+    // Delete the image from storage
+    if (photo?.image_url) {
+      await deleteImage(STORAGE_BUCKETS.PROGRESS_PHOTOS, photo.image_url)
     }
 
     return { success: true, error: null }
