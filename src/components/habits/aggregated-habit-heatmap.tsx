@@ -26,6 +26,7 @@ export function AggregatedHabitHeatmap({
   onYearChange
 }: AggregatedHabitHeatmapProps) {
   const [isHabitsExpanded, setIsHabitsExpanded] = useState(false)
+  const [showAllHabits, setShowAllHabits] = useState(false)
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null)
   const [hoveredDayData, setHoveredDayData] = useState<any | null>(null)
   const [hoveredPosition, setHoveredPosition] = useState<{ x: number; y: number } | null>(null)
@@ -51,9 +52,19 @@ export function AggregatedHabitHeatmap({
     if (name.includes('water') || name.includes('drink')) return { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700' }
     if (name.includes('massage') || name.includes('head')) return { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700' }
     if (name.includes('sleep') || name.includes('bed')) return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' }
-    if (name.includes('exercise') || name.includes('jog') || name.includes('workout')) return { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' }
-    if (name.includes('eat') || name.includes('nutrition')) return { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' }
-    if (name.includes('read') || name.includes('book')) return { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700' }
+    if (name.includes('exercise') || name.includes('jog') || name.includes('workout') || name.includes('gym')) return { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' }
+    if (name.includes('eat') || name.includes('nutrition') || name.includes('cook') || name.includes('food')) return { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' }
+    if (name.includes('read') || name.includes('book') || name.includes('study')) return { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700' }
+    if (name.includes('skin') || name.includes('care')) return { bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-700' }
+    if (name.includes('visualization') || name.includes('visual')) return { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700' }
+    if (name.includes('freelance') || name.includes('work')) return { bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700' }
+    if (name.includes('porn') || name.includes('behave')) return { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700' }
+    if (name.includes('junk') || name.includes('sugar')) return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700' }
+    if (name.includes('smoking') || name.includes('alcohol')) return { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700' }
+    if (name.includes('kovil') || name.includes('temple')) return { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700' }
+    if (name.includes('meditation') || name.includes('meditate')) return { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-700' }
+    if (name.includes('oil') || name.includes('apply')) return { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' }
+    // Default fallback with background color
     return { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-700' }
   }
 
@@ -335,10 +346,10 @@ export function AggregatedHabitHeatmap({
               </Button>
             </div>
             
-            {/* Desktop: Always show all habits */}
+            {/* Desktop: Show limited habits initially with load more */}
             <div className="hidden md:block">
               <div className="flex flex-wrap gap-3">
-                {filteredHabits.map(habit => {
+                {(showAllHabits ? filteredHabits : filteredHabits.slice(0, 4)).map(habit => {
                   const HabitIcon = getHabitIcon(habit.name)
                   const themeColors = getHabitThemeColor(habit.name)
                   const isFiltered = filteredHabitId === habit.id
@@ -371,6 +382,26 @@ export function AggregatedHabitHeatmap({
                     </div>
                   )
                 })}
+                
+                {/* Load More/Load Less Button */}
+                {filteredHabits.length > 4 && (
+                  <div
+                    className="group relative flex items-center gap-2 px-3 py-2 rounded-full border-2 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-105 bg-gray-50 border-gray-200"
+                    onClick={() => setShowAllHabits(!showAllHabits)}
+                    title={`${showAllHabits ? 'Show less habits' : `Show ${filteredHabits.length - 4} more habits`}`}
+                  >
+                    <Activity className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-600">
+                      {showAllHabits ? 'Show Less' : `+${filteredHabits.length - 4} More`}
+                    </span>
+                    
+                    {/* Tooltip on hover */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      {showAllHabits ? 'Show less habits' : `Show ${filteredHabits.length - 4} more habits`}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -406,8 +437,12 @@ export function AggregatedHabitHeatmap({
                     )
                   })}
                   {filteredHabits.length > 3 && (
-                    <div className="flex items-center px-2 py-1 text-xs text-muted-foreground bg-gray-100 rounded-full">
-                      +{filteredHabits.length - 3} more
+                    <div 
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-full cursor-pointer transition-all duration-200 hover:bg-gray-100"
+                      onClick={() => setIsHabitsExpanded(true)}
+                    >
+                      <Activity className="h-3 w-3" />
+                      <span>+{filteredHabits.length - 3} more</span>
                     </div>
                   )}
                 </div>
@@ -634,27 +669,27 @@ export function AggregatedHabitHeatmap({
             minWidth: 220,
             maxWidth: 320,
           }}
-          className="px-3 py-2 bg-black text-white text-xs rounded-lg shadow-lg"
+          className="bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-[9999] relative"
         >
-          <div className="font-semibold">{formatDate(hoveredDay, 'MMM dd, yyyy')}</div>
-          <div className="text-gray-300">
-            {hoveredDayData.completedCount}/{hoveredDayData.totalHabits} habits ({hoveredDayData.completionRate.toFixed(1)}%)
-          </div>
-          {hoveredDayData.habitDetails.length > 0 && (
-            <div className="mt-1 space-y-0.5">
-              {hoveredDayData.habitDetails.slice(0, 3).map((habit: any, idx: number) => (
-                <div key={idx} className="flex items-center gap-1 text-xs">
-                  <span className={habit.completed ? 'text-green-400' : 'text-red-400'}>
-                    {habit.completed ? '\u2713' : '\u2717'}
-                  </span>
-                  <span>{habit.name}</span>
-                </div>
-              ))}
-              {hoveredDayData.habitDetails.length > 3 && (
-                <div className="text-xs text-gray-400">+{hoveredDayData.habitDetails.length - 3} more</div>
-              )}
+          <p className="font-semibold text-sm mb-2 text-gray-900">{formatDate(hoveredDay, 'MMM dd, yyyy')}</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs">
+              <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+              <span className="font-medium text-gray-700">Completed:</span>
+              <span className="text-gray-600 font-semibold">{hoveredDayData.completedCount}</span>
             </div>
-          )}
+            <div className="flex items-center gap-2 text-xs">
+              <div className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
+              <span className="font-medium text-gray-700">Not Completed:</span>
+              <span className="text-gray-600 font-semibold">{hoveredDayData.totalHabits - hoveredDayData.completedCount}</span>
+            </div>
+            <div className="pt-1 border-t border-gray-100">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-medium text-gray-700">Total Habits:</span>
+                <span className="text-gray-600 font-semibold">{hoveredDayData.totalHabits}</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </Card>

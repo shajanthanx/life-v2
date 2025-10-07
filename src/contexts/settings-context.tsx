@@ -18,7 +18,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   const DEFAULT_MODULES = [
-    'goals', 'tasks', 'habits', 'notes', 'health', 
+    'goals', 'tasks', 'habits', 'notes', 'health', 'progress',
     'finance', 'lifestyle', 'visualization', 'gifts', 
     'memories', 'freelancing', 'secrets', 'analytics'
   ]

@@ -80,17 +80,26 @@ export function RecordingView({
   const [deleteTransactionId, setDeleteTransactionId] = useState<string | null>(null)
   
 
-  // Calculate today's stats
-  const today = new Date().toISOString().split('T')[0]
-  const todayTransactions = transactions.filter(t => 
-    t.date.toISOString().split('T')[0] === today
-  )
+  // Calculate total balance and this month's stats
+  const totalBalance = transactions.reduce((sum, t) => {
+    return t.type === 'income' ? sum + t.amount : sum - t.amount
+  }, 0)
   
-  const todayIncome = todayTransactions
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+  
+  const thisMonthTransactions = transactions.filter(t => {
+    const transactionDate = new Date(t.date)
+    return transactionDate.getMonth() === currentMonth && 
+           transactionDate.getFullYear() === currentYear
+  })
+  
+  const thisMonthIncome = thisMonthTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0)
   
-  const todayExpenses = todayTransactions
+  const thisMonthExpenses = thisMonthTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0)
 
@@ -323,7 +332,7 @@ export function RecordingView({
         </div>
       </div>
 
-      {/* Today's Summary */}
+      {/* Financial Summary */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="border-l-4 border-l-[#17BEBB] shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-3 sm:p-4">
@@ -332,8 +341,8 @@ export function RecordingView({
                 <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-[#17BEBB]" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Today's Income</p>
-                <p className="text-lg sm:text-2xl font-bold text-[#17BEBB] truncate">{formatCurrency(todayIncome)}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">This Month's Income</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#17BEBB] truncate">{formatCurrency(thisMonthIncome)}</p>
               </div>
             </div>
           </CardContent>
@@ -346,15 +355,15 @@ export function RecordingView({
                 <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-[#C41E3D]" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Today's Expenses</p>
-                <p className="text-lg sm:text-2xl font-bold text-[#C41E3D] truncate">{formatCurrency(todayExpenses)}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">This Month's Expenses</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#C41E3D] truncate">{formatCurrency(thisMonthExpenses)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className={`border-l-4 shadow-sm hover:shadow-md transition-shadow ${
-          todayIncome - todayExpenses >= 0 
+          totalBalance >= 0 
             ? 'border-l-[#2667FF]' 
             : 'border-l-[#D62246]'
         }`}>
@@ -362,22 +371,21 @@ export function RecordingView({
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-gray-50 rounded-full flex-shrink-0">
                 <DollarSign className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                  todayIncome - todayExpenses >= 0 ? 'text-[#2667FF]' : 'text-[#D62246]'
+                  totalBalance >= 0 ? 'text-[#2667FF]' : 'text-[#D62246]'
                 }`} />
               </div>
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Net Today
+                  Total Balance
                 </p>
                 <p className={`text-lg sm:text-2xl font-bold truncate ${
-                  todayIncome - todayExpenses >= 0 ? 'text-[#2667FF]' : 'text-[#D62246]'
+                  totalBalance >= 0 ? 'text-[#2667FF]' : 'text-[#D62246]'
                 }`}>
-                  {todayIncome - todayExpenses >= 0 ? '+' : '-'}{formatCurrency(Math.abs(todayIncome - todayExpenses))}
+                  {totalBalance >= 0 ? '+' : ''}{formatCurrency(totalBalance)}
                 </p>
                 <p className={`text-xs font-medium uppercase ${
-                  todayIncome - todayExpenses >= 0 ? 'text-[#2667FF]' : 'text-[#D62246]'
+                  totalBalance >= 0 ? 'text-[#2667FF]' : 'text-[#D62246]'
                 }`}>
-                  {todayIncome - todayExpenses >= 0 ? 'Surplus' : 'Deficit'}
                 </p>
               </div>
             </div>

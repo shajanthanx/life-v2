@@ -34,7 +34,8 @@ import {
   Gift,
   Album,
   Briefcase,
-  TrendingUp
+  TrendingUp,
+  Camera
 } from 'lucide-react'
 
 interface SettingsViewProps {
@@ -133,6 +134,7 @@ export function SettingsView({ onDataExport, onDataImport, onDataReset }: Settin
     { id: 'habits', label: 'Habits', icon: Repeat, description: 'Build positive habits for a better life' },
     { id: 'notes', label: 'Quick Notes', icon: StickyNote, description: 'Capture quick thoughts and set reminders' },
     { id: 'health', label: 'Health Tracking', icon: Heart, description: 'Monitor your physical and mental wellbeing' },
+    { id: 'progress', label: 'Progress Photos', icon: Camera, description: 'Track your transformation with weekly progress photos' },
     { id: 'finance', label: 'Finance', icon: DollarSign, description: 'Track spending, budgets, and savings' },
     { id: 'lifestyle', label: 'Lifestyle', icon: BookOpen, description: 'Journal, entertainment, and personal interests' },
     { id: 'visualization', label: 'Vision Board', icon: Eye, description: 'Visualize your dreams and aspirations' },

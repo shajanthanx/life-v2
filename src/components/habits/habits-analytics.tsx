@@ -53,6 +53,9 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
   // Weekly chart navigation state
   const [weeksToShow, setWeeksToShow] = useState<number>(10)
   const [weekOffset, setWeekOffset] = useState<number>(0) // 0 = current week, positive = weeks ago
+  
+  // Filter panel state
+  const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(false)
 
   // Initialize selected habits from localStorage or default to all
   useEffect(() => {
@@ -498,9 +501,9 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with Controls */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="text-center sm:text-left">
             <h1 className="text-xl sm:text-2xl font-bold">Habits Analytics</h1>
@@ -517,7 +520,7 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
 
         {/* Controls Row */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Date Range Selector */}
+          {/* Left side: Date Range Selector */}
           <div className="flex flex-wrap gap-1 justify-center lg:justify-start">
             {DATE_RANGES.map(range => (
               <Button
@@ -532,102 +535,106 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
             ))}
           </div>
 
-          {/* Habit Selection */}
-          <Card className="border shadow-sm w-full lg:w-auto">
-            <CardHeader className="pb-3 px-3 sm:px-6">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    <CardTitle className="text-sm sm:text-base">Filter Habits</CardTitle>
-                  </div>
-                  <Badge variant="secondary" className="text-xs w-fit">
-                    {selectedHabits.length} of {habits.length} selected
+          {/* Right side: Compact Habit Selection */}
+          <Card className="border shadow-sm w-full lg:w-96">
+            <CardHeader className="pb-2 px-3 sm:px-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-sm">Filter Habits</CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedHabits.length}/{habits.length}
                   </Badge>
                 </div>
-                <div className="flex gap-1 sm:gap-2">
+                <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={selectAllHabits}
                     disabled={selectedHabits.length === habits.length}
-                    className="h-7 sm:h-8 px-2 sm:px-3 text-xs bg-transparent text-[#007BFF] hover:bg-[#007BFF]/10 hover:text-[#007BFF] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex-1 sm:flex-none"
+                    className="h-6 px-2 text-xs text-[#007BFF] hover:bg-[#007BFF]/10"
                   >
                     <CheckCircle2 className="h-3 w-3 mr-1" />
-                    <span className="hidden sm:inline">Select All</span>
-                    <span className="sm:hidden">All</span>
+                    All
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={removeAllSelections}
                     disabled={selectedHabits.length === 0}
-                    className="h-7 sm:h-8 px-2 sm:px-3 text-xs bg-transparent text-[#FF4C4C] hover:bg-[#FF4C4C]/10 hover:text-[#FF4C4C] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex-1 sm:flex-none"
+                    className="h-6 px-2 text-xs text-[#FF4C4C] hover:bg-[#FF4C4C]/10"
                   >
                     <XCircle className="h-3 w-3 mr-1" />
-                    <span className="hidden sm:inline">Remove All</span>
-                    <span className="sm:hidden">None</span>
+                    None
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+                    className="h-6 px-2 text-xs"
+                  >
+                    {isFilterExpanded ? 'Collapse' : 'Expand'}
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-0 px-3 sm:px-6">
-              <div className="max-h-60 lg:max-h-48 overflow-y-auto">
-                <div className="grid grid-cols-1 gap-2">
-                  {habits.map(habit => {
-                    const isExplicitlySelected = selectedHabits.includes(habit.id)
-                    
-                    return (
-                      <div 
-                        key={habit.id} 
-                        className={`
-                          flex items-center gap-2 px-2 py-2 rounded-md border cursor-pointer 
-                          transition-all duration-200 font-medium text-xs sm:text-sm
-                          ${isExplicitlySelected
-                            ? 'bg-[#2D2D2D] border-[#2D2D2D] hover:bg-[#262626] text-white shadow-sm' 
-                            : 'bg-[#F0F0F0] border-[#E0E0E0] hover:bg-[#E8E8E8] text-[#333333]'
-                          }
-                        `}
-                        onClick={() => toggleHabitSelection(habit.id)}
-                        style={{
-                          borderRadius: '6px'
-                        }}
-                      >
-                        <Checkbox
-                          checked={isExplicitlySelected}
-                          onCheckedChange={() => toggleHabitSelection(habit.id)}
+            
+            {isFilterExpanded && (
+              <CardContent className="pt-0 px-3 sm:px-4">
+                <div className="max-h-48 overflow-y-auto">
+                  <div className="grid grid-cols-1 gap-1">
+                    {habits.map(habit => {
+                      const isExplicitlySelected = selectedHabits.includes(habit.id)
+                      
+                      return (
+                        <div 
+                          key={habit.id} 
                           className={`
-                            pointer-events-none h-3 w-3 sm:h-4 sm:w-4 transition-all duration-200
-                            ${isExplicitlySelected 
-                              ? 'data-[state=checked]:bg-[#007BFF] data-[state=checked]:border-[#007BFF] data-[state=checked]:text-white' 
-                              : 'border-[#999999] data-[state=unchecked]:bg-white'
+                            flex items-center gap-2 px-2 py-1.5 rounded-md border cursor-pointer 
+                            transition-all duration-200 text-xs
+                            ${isExplicitlySelected
+                              ? 'bg-[#2D2D2D] border-[#2D2D2D] text-white shadow-sm' 
+                              : 'bg-[#F0F0F0] border-[#E0E0E0] hover:bg-[#E8E8E8] text-[#333333]'
                             }
                           `}
-                        />
-                        <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
-                          <div 
-                            className="w-2 h-2 sm:w-3 sm:h-3 rounded-full flex-shrink-0 border border-white/30 shadow-sm" 
-                            style={{ backgroundColor: habit.color }}
+                          onClick={() => toggleHabitSelection(habit.id)}
+                        >
+                          <Checkbox
+                            checked={isExplicitlySelected}
+                            onCheckedChange={() => toggleHabitSelection(habit.id)}
+                            className={`
+                              pointer-events-none h-3 w-3
+                              ${isExplicitlySelected 
+                                ? 'data-[state=checked]:bg-[#007BFF] data-[state=checked]:border-[#007BFF]' 
+                                : 'border-[#999999] data-[state=unchecked]:bg-white'
+                              }
+                            `}
                           />
-                          <span className="truncate text-xs sm:text-sm">
-                            {habit.name}
-                          </span>
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <div 
+                              className="w-2 h-2 rounded-full flex-shrink-0" 
+                              style={{ backgroundColor: habit.color }}
+                            />
+                            <span className="truncate text-xs">
+                              {habit.name}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-              
-              {selectedHabits.length > 0 && (
-                <div className="mt-3 pt-3 border-t">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Activity className="h-3 w-3" />
-                    <span>Analyzing {selectedHabits.length} of {habits.length} habits</span>
+                      )
+                    })}
                   </div>
                 </div>
-              )}
-            </CardContent>
+                
+                {selectedHabits.length > 0 && (
+                  <div className="mt-2 pt-2 border-t">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Activity className="h-3 w-3" />
+                      <span>Analyzing {selectedHabits.length} habits</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            )}
           </Card>
         </div>
       </div>
@@ -652,7 +659,7 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-4">
           {selectedHabits.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -849,7 +856,7 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
         </TabsContent>
 
         {/* Trends Tab */}
-        <TabsContent value="trends" className="space-y-6">
+        <TabsContent value="trends" className="space-y-4">
           {selectedHabits.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -939,6 +946,41 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
                   <Tooltip 
                     labelFormatter={(value) => `Week: ${value}`}
                     formatter={(value, name) => [`${Number(value).toFixed(1)} days`, name]}
+                    wrapperStyle={{ zIndex: 9999 }}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || payload.length === 0) {
+                        return null
+                      }
+                      
+                      // Calculate completed and not completed counts
+                      const totalHabits = payload.length
+                      const completedHabits = payload.filter(entry => Number(entry.value) > 0).length
+                      const notCompletedHabits = totalHabits - completedHabits
+                      
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-lg shadow-xl p-3 max-w-xs z-[9999] relative">
+                          <p className="font-semibold text-sm mb-2 text-gray-900">{`Week: ${label}`}</p>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs">
+                              <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+                              <span className="font-medium text-gray-700">Completed:</span>
+                              <span className="text-gray-600 font-semibold">{completedHabits}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs">
+                              <div className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
+                              <span className="font-medium text-gray-700">Not Completed:</span>
+                              <span className="text-gray-600 font-semibold">{notCompletedHabits}</span>
+                            </div>
+                            <div className="pt-1 border-t border-gray-100">
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="font-medium text-gray-700">Total Habits:</span>
+                                <span className="text-gray-600 font-semibold">{totalHabits}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }}
                   />
                   <Legend />
                   {allHabitsComparisonData.habits.map((habit) => (
@@ -1052,7 +1094,7 @@ export function HabitsAnalytics({ habits }: HabitsAnalyticsProps) {
         </TabsContent>
 
         {/* Heatmaps Tab */}
-        <TabsContent value="heatmaps" className="space-y-6">
+        <TabsContent value="heatmaps" className="space-y-4">
           <AggregatedHabitHeatmap 
             habits={habits}
             selectedHabits={selectedHabits}

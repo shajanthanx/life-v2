@@ -15,11 +15,16 @@ interface FinanceOverviewProps {
 }
 
 export function FinanceOverview({ transactions, savingsGoals, onNavigateToFinance }: FinanceOverviewProps) {
-  // Calculate current month's data
-  const currentMonthData = useMemo(() => {
+  // Calculate total balance and current month's data
+  const financialData = useMemo(() => {
     const now = new Date()
     const currentMonth = now.getMonth()
     const currentYear = now.getFullYear()
+    
+    // Calculate total balance
+    const totalBalance = transactions.reduce((sum, t) => {
+      return t.type === 'income' ? sum + t.amount : sum - t.amount
+    }, 0)
     
     const monthTransactions = transactions.filter(t => {
       const transactionDate = new Date(t.date)
@@ -39,6 +44,7 @@ export function FinanceOverview({ transactions, savingsGoals, onNavigateToFinanc
     const savingsRate = monthIncome > 0 ? (netIncome / monthIncome) * 100 : 0
     
     return {
+      totalBalance,
       income: monthIncome,
       expenses: monthExpenses,
       net: netIncome,
@@ -111,51 +117,48 @@ export function FinanceOverview({ transactions, savingsGoals, onNavigateToFinanc
       
       <CardContent className="p-6">
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Current Month Performance */}
+          {/* Financial Summary */}
           <div className="space-y-4">
             <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-              📊 This Month
+              💰 Financial Summary
             </h4>
             
             <div className="grid gap-3">
-              {/* Income */}
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
-                <div className="flex items-center space-x-3">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-800">Income</span>
-                </div>
-                <span className="font-bold text-green-700">{formatCurrency(currentMonthData.income)}</span>
-              </div>
-              
-              {/* Expenses */}
-              <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
-                <div className="flex items-center space-x-3">
-                  <TrendingDown className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium text-red-800">Expenses</span>
-                </div>
-                <span className="font-bold text-red-700">{formatCurrency(currentMonthData.expenses)}</span>
-              </div>
-              
-              {/* Net Income */}
+              {/* Total Balance */}
               <div className={`flex items-center justify-between p-3 rounded-lg border ${
-                currentMonthData.net >= 0 
+                financialData.totalBalance >= 0 
                   ? 'bg-blue-50 border-blue-100' 
                   : 'bg-orange-50 border-orange-100'
               }`}>
                 <div className="flex items-center space-x-3">
-                  <DollarSign className={`h-4 w-4 ${currentMonthData.net >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
-                  <span className={`text-sm font-medium ${currentMonthData.net >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
-                    Net Income
+                  <DollarSign className={`h-4 w-4 ${financialData.totalBalance >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+                  <span className={`text-sm font-medium ${financialData.totalBalance >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
+                    Total Balance
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className={`font-bold ${currentMonthData.net >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
-                    {currentMonthData.net >= 0 ? '+' : ''}{formatCurrency(currentMonthData.net)}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {currentMonthData.savingsRate.toFixed(1)}% savings rate
+                  <div className={`font-bold ${financialData.totalBalance >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+                    {financialData.totalBalance >= 0 ? '+' : ''}{formatCurrency(financialData.totalBalance)}
                   </div>
                 </div>
+              </div>
+              
+              {/* This Month's Income */}
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
+                <div className="flex items-center space-x-3">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">This Month's Income</span>
+                </div>
+                <span className="font-bold text-green-700">{formatCurrency(financialData.income)}</span>
+              </div>
+              
+              {/* This Month's Expenses */}
+              <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                <div className="flex items-center space-x-3">
+                  <TrendingDown className="h-4 w-4 text-red-600" />
+                  <span className="text-sm font-medium text-red-800">This Month's Expenses</span>
+                </div>
+                <span className="font-bold text-red-700">{formatCurrency(financialData.expenses)}</span>
               </div>
             </div>
           </div>
@@ -213,11 +216,11 @@ export function FinanceOverview({ transactions, savingsGoals, onNavigateToFinanc
         {/* Quick Stats Footer */}
         <div className="mt-6 pt-4 border-t border-gray-100">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-gray-600">
-            <span className="text-center sm:text-left">{currentMonthData.transactionCount} transactions this month</span>
+            <span className="text-center sm:text-left">{financialData.transactionCount} transactions this month</span>
             <div className="flex justify-center sm:justify-end">
-              {currentMonthData.savingsRate >= 20 ? (
+              {financialData.savingsRate >= 20 ? (
                 <Badge className="bg-green-100 text-green-800 text-xs">Great Savings Rate! 🎉</Badge>
-              ) : currentMonthData.savingsRate >= 10 ? (
+              ) : financialData.savingsRate >= 10 ? (
                 <Badge variant="outline" className="border-yellow-300 text-yellow-700 text-xs">Good Progress</Badge>
               ) : (
                 <Badge variant="outline" className="border-orange-300 text-orange-700 text-xs">Room for Improvement</Badge>
@@ -229,3 +232,4 @@ export function FinanceOverview({ transactions, savingsGoals, onNavigateToFinanc
     </Card>
   )
 }
+

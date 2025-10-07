@@ -31,7 +31,7 @@ export interface UserSettings {
 export const DEFAULT_SETTINGS: UserSettings = {
   modules: {
     enabled: [
-      'goals', 'tasks', 'habits', 'notes', 'health', 
+      'goals', 'tasks', 'habits', 'notes', 'health', 'progress',
       'finance', 'lifestyle', 'visualization', 'gifts', 
       'memories', 'freelancing', 'secrets', 'analytics'
     ]
