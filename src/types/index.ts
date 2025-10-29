@@ -43,6 +43,30 @@ export interface Task {
   createdAt: Date
 }
 
+export interface Todo {
+  id: string
+  title: string
+  description?: string
+  priority: 'low' | 'medium' | 'high'
+  dueDate?: Date
+  isCompleted: boolean
+  completedAt?: Date
+  notes?: string
+  checklistItems?: TodoChecklistItem[]
+  position: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface TodoChecklistItem {
+  id: string
+  todoId: string
+  content: string
+  isCompleted: boolean
+  position: number
+  createdAt: Date
+}
+
 export interface Habit {
   id: string
   name: string
@@ -339,12 +363,13 @@ export interface AppState {
   user: User | null
   goals: Goal[]
   tasks: Task[]
+  todos: Todo[]
   habits: Habit[]
   healthMetrics: HealthMetric[]
   sleepRecords: SleepRecord[]
   exerciseRecords: ExerciseRecord[]
   nutritionRecords: NutritionRecord[]
-  
+
   // Finance data
   transactions: Transaction[]
   budgets: Budget[]
@@ -353,7 +378,7 @@ export interface AppState {
   categories: Category[]
   predefinedExpenses: PredefinedExpense[]
   accounts: UserAccount[]
-  
+
   // Lifestyle data
   journalEntries: JournalEntry[]
   books: Book[]
@@ -370,7 +395,7 @@ export interface AppState {
   secrets: Secret[]
   freelanceProjects: FreelanceProject[]
   timeEntries: TimeEntry[]
-  
+
   // Notes data
   notes: Note[]
 }

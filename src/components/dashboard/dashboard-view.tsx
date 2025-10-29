@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { AggregatedHabitHeatmap } from '../habits/aggregated-habit-heatmap'
 import { FinanceOverview } from '../finance/finance-overview'
+import { TodosOverview } from '../todos/todos-overview'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppState } from '@/types'
@@ -60,6 +61,13 @@ export function DashboardView({ data, onQuickAction, onNavigateToFinance, onAddT
           </Button>
         </div>
       )}
+
+      {/* Todos Overview */}
+      <TodosOverview
+        todos={data.todos || []}
+        onNavigateToTodos={() => onQuickAction('todos')}
+        onAddTodo={() => onQuickAction('todos')}
+      />
 
       {/* Finance Overview */}
       <FinanceOverview

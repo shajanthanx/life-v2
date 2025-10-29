@@ -36,6 +36,7 @@ import { AddGoalModal } from './modals/add-goal-modal'
 import { EditGoalModal } from './modals/edit-goal-modal'
 import { createGoal, updateGoal, deleteGoal } from '@/lib/api/goals'
 import { createTask, updateTask, deleteTask } from '@/lib/api/tasks'
+import { createTodo, updateTodo, deleteTodo, toggleTodoCompletion, clearCompletedTodos } from '@/lib/api/todos'
 import { createHabit, updateHabit, deleteHabit } from '@/lib/api/habits'
 import { createJournalEntry, updateJournalEntry, deleteJournalEntry } from '@/lib/api/journal'
 import { createTransaction } from '@/lib/api/transactions'
@@ -63,7 +64,8 @@ import { AddBookModal } from './modals/add-book-modal'
 import { AddBadHabitModal } from './modals/add-bad-habit-modal'
 import { authService } from '@/lib/auth'
 import { databaseService } from '@/lib/database'
-import { AppState, Goal, Task, Habit, JournalEntry } from '@/types'
+import { AppState, Goal, Task, Todo, Habit, JournalEntry } from '@/types'
+import { TodosView } from './todos/todos-view'
 
 const getTabTitle = (tab: string) => {
   switch (tab) {
@@ -73,6 +75,8 @@ const getTabTitle = (tab: string) => {
       return 'Goals'
     case 'tasks':
       return 'Tasks'
+    case 'todos':
+      return 'Todos'
     case 'habits':
       return 'Habits'
     case 'notes':
@@ -116,6 +120,8 @@ const getTabSubtitle = (tab: string) => {
       return 'Track your progress towards achieving your dreams'
     case 'tasks':
       return 'Manage your daily tasks and to-dos'
+    case 'todos':
+      return 'Simple todo list with priority and notes'
     case 'habits':
       return 'Build positive habits for a better life'
     case 'notes':
@@ -327,6 +333,67 @@ function AppContent() {
     }
   }
 
+  const handleTodoDelete = async (todoId: string) => {
+    const result = await deleteTodo(todoId)
+    if (result.error) {
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: result.error
+      })
+    } else {
+      // Remove the deleted todo from local state
+      setAppData(prev => ({
+        ...prev!,
+        todos: prev!.todos.filter(t => t.id !== todoId)
+      }))
+      addToast({
+        type: 'success',
+        title: 'Success',
+        message: 'Todo deleted successfully!'
+      })
+    }
+  }
+
+  const handleTodoToggle = async (todoId: string) => {
+    const result = await toggleTodoCompletion(todoId)
+    if (result.error) {
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: result.error
+      })
+    } else if (result.data) {
+      // Update only the specific todo in local state
+      setAppData(prev => ({
+        ...prev!,
+        todos: prev!.todos.map(t => t.id === todoId ? result.data! : t)
+      }))
+    }
+  }
+
+  const handleClearCompletedTodos = async () => {
+    const result = await clearCompletedTodos()
+    if (result.error) {
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: result.error
+      })
+    } else {
+      // Remove completed todos from local state
+      setAppData(prev => ({
+        ...prev!,
+        todos: prev!.todos.filter(t => !t.isCompleted)
+      }))
+      addToast({
+        type: 'success',
+        title: 'Success',
+        message: 'Completed todos cleared!'
+      })
+    }
+  }
+
   const handleHabitEdit = (habit: Habit) => {
     setEditingHabit(habit)
     setShowEditHabitModal(true)
@@ -430,6 +497,9 @@ function AppContent() {
       case 'add-task':
         setShowAddTaskModal(true)
         break
+      case 'todos':
+        setActiveTab('todos')
+        break
       case 'log-habit':
         setShowLogHabitModal(true)
         break
@@ -515,12 +585,57 @@ function AppContent() {
         )
       case 'tasks':
         return (
-          <TasksPage 
+          <TasksPage
             data={appData}
             onDataUpdate={handleDataUpdate}
             onAddTask={() => setShowAddTaskModal(true)}
             onTaskEdit={handleTaskEdit}
             onTaskDelete={handleTaskDelete}
+          />
+        )
+      case 'todos':
+        return (
+          <TodosView
+            todos={appData.todos}
+            onCreateTodo={async (todoData) => {
+              const result = await createTodo(todoData)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else if (result.data) {
+                // Add the new todo to local state
+                setAppData(prev => ({
+                  ...prev!,
+                  todos: [...prev!.todos, result.data!]
+                }))
+                addToast({
+                  type: 'success',
+                  message: 'Todo created successfully!'
+                })
+              }
+            }}
+            onUpdateTodo={async (id, updates) => {
+              const result = await updateTodo(id, updates)
+              if (result.error) {
+                addToast({
+                  type: 'error',
+                  title: 'Error',
+                  message: result.error
+                })
+              } else if (result.data) {
+                // Update only the todos in the local state
+                setAppData(prev => ({
+                  ...prev!,
+                  todos: prev!.todos.map(t => t.id === id ? result.data! : t)
+                }))
+              }
+            }}
+            onDeleteTodo={handleTodoDelete}
+            onToggleTodo={handleTodoToggle}
+            onClearCompleted={handleClearCompletedTodos}
           />
         )
       case 'habits':

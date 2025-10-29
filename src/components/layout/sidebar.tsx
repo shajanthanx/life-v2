@@ -36,6 +36,7 @@ const navigationItems = [
   { id: 'dashboard', label: 'Home', icon: Home },
   { id: 'goals', label: 'Goals', icon: Target },
   { id: 'tasks', label: 'Tasks', icon: CheckCircle2 },
+  { id: 'todos', label: 'Todos', icon: CheckCircle2 },
   { id: 'habits', label: 'Habits', icon: Repeat },
   { id: 'notes', label: 'Quick Notes', icon: StickyNote },
   { id: 'badhabits', label: 'Bad Habits', icon: Minus },

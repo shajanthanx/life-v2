@@ -1,8 +1,9 @@
 import { supabase } from './supabase'
-import { AppState, Goal, Task, Habit, JournalEntry, Book, Movie, Transaction, SleepRecord, ExerciseRecord, NutritionRecord } from '@/types'
+import { AppState, Goal, Task, Todo, Habit, JournalEntry, Book, Movie, Transaction, SleepRecord, ExerciseRecord, NutritionRecord } from '@/types'
 import { authService } from './auth'
 import { getUserGoals } from './api/goals'
 import { getUserTasks } from './api/tasks'
+import { getUserTodos } from './api/todos'
 import { getUserHabits } from './api/habits'
 import { getUserJournalEntries } from './api/journal'
 import { getUserTransactions } from './api/transactions'
@@ -43,6 +44,7 @@ export class DatabaseService {
       const [
         goalsResult,
         tasksResult,
+        todosResult,
         habitsResult,
         journalEntriesResult,
         books,
@@ -69,6 +71,7 @@ export class DatabaseService {
       ] = await Promise.all([
         getUserGoals(),
         getUserTasks(),
+        getUserTodos(),
         getUserHabits(),
         getUserJournalEntries(),
         getUserBooks(),
@@ -98,6 +101,7 @@ export class DatabaseService {
         user,
         goals: goalsResult.data || [],
         tasks: tasksResult.data || [],
+        todos: todosResult.data || [],
         habits: habitsResult.data || [],
         healthMetrics: [], // Will be implemented later
         sleepRecords: sleepRecords.data || [],
@@ -109,6 +113,7 @@ export class DatabaseService {
         investments: [], // Will be implemented later
         categories: categories.data || [],
         predefinedExpenses: predefinedExpenses.data || [],
+        accounts: [], // Will be implemented later
         journalEntries: journalEntriesResult.data || [],
         books: books.data || [],
         movies: movies.data || [],
@@ -142,6 +147,7 @@ export class DatabaseService {
       user: null,
       goals: [],
       tasks: [],
+      todos: [],
       habits: [],
       healthMetrics: [],
       sleepRecords: [],
@@ -153,6 +159,7 @@ export class DatabaseService {
       investments: [],
       categories: [],
       predefinedExpenses: [],
+      accounts: [],
       journalEntries: [],
       books: [],
       movies: [],

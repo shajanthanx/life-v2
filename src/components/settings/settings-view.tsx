@@ -131,6 +131,7 @@ export function SettingsView({ onDataExport, onDataImport, onDataReset }: Settin
   const availableModules = [
     { id: 'goals', label: 'Goals', icon: Target, description: 'Track your progress towards achieving your dreams' },
     { id: 'tasks', label: 'Tasks', icon: CheckCircle2, description: 'Manage your daily tasks and to-dos' },
+    { id: 'todos', label: 'Todos', icon: CheckCircle2, description: 'Simple todo list with priority and notes' },
     { id: 'habits', label: 'Habits', icon: Repeat, description: 'Build positive habits for a better life' },
     { id: 'notes', label: 'Quick Notes', icon: StickyNote, description: 'Capture quick thoughts and set reminders' },
     { id: 'health', label: 'Health Tracking', icon: Heart, description: 'Monitor your physical and mental wellbeing' },
